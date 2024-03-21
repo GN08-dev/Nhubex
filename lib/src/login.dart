@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/src/Menu_Principal.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_proyect/models/EmpresaImageHelper.dart';
 
 class MyAppForm extends StatefulWidget {
-  const MyAppForm({super.key});
+  const MyAppForm({Key? key}) : super(key: key);
 
   @override
   State<MyAppForm> createState() => _MyAppFormState();
@@ -12,22 +14,118 @@ class _MyAppFormState extends State<MyAppForm> {
   final empresaController = TextEditingController();
   final usuarioController = TextEditingController();
   final passwordController = TextEditingController();
-  @override
-  void dispose() {
-    empresaController.dispose();
-    usuarioController.dispose();
-    passwordController.dispose();
-    super.dispose();
-  }
 
+  late FocusNode empresaFocusNode;
   late FocusNode usuarioFocusNode;
   late FocusNode passwordFocusNode;
 
   @override
   void initState() {
     super.initState();
+    empresaFocusNode = FocusNode();
     usuarioFocusNode = FocusNode();
     passwordFocusNode = FocusNode();
+
+    empresaController.addListener(actualizarImagen);
+  }
+
+  @override
+  void dispose() {
+    empresaController.dispose();
+    empresaFocusNode.dispose();
+    usuarioController.dispose();
+    passwordController.dispose();
+    usuarioFocusNode.dispose();
+    passwordFocusNode.dispose();
+
+    super.dispose();
+  }
+
+  void actualizarImagen() {
+    setState(() {});
+  }
+
+  Future<void> iniciarSesion() async {
+    String empresa = empresaController.text;
+    String usuario = usuarioController.text;
+    String password = passwordController.text;
+
+    if (empresa.isEmpty || usuario.isEmpty || password.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Favor de llenar el formulario'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Ok'),
+              )
+            ],
+          );
+        },
+      );
+    } else {
+      try {
+        // Iniciar sesión con Firebase Authentication
+        UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: usuario,
+          password: password,
+        );
+
+        // Verificar si la autenticación fue exitosa
+        if (userCredential.user != null) {
+          // Navegar al menú principal
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MainMenu(
+                  companyName: EmpresaImageHelper.getCompanyName(empresa)),
+            ),
+          );
+        } else {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: const Text('Credenciales inválidas'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Ok'),
+                  )
+                ],
+              );
+            },
+          );
+        }
+      } on FirebaseAuthException catch (e) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Error'),
+              content: Text(e.message ?? 'Ocurrió un error'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Ok'),
+                )
+              ],
+            );
+          },
+        );
+      }
+    }
   }
 
   @override
@@ -42,7 +140,8 @@ class _MyAppFormState extends State<MyAppForm> {
               CircleAvatar(
                 radius: 100.0,
                 backgroundColor: Colors.white,
-                child: Image.asset('assets/images/nhubex.png'),
+                child: Image.network(
+                    EmpresaImageHelper.getImageUrl(empresaController.text)),
               ),
               const Text(
                 'Login',
@@ -53,16 +152,14 @@ class _MyAppFormState extends State<MyAppForm> {
                 height: 15.0,
                 child: Divider(color: Color.fromARGB(255, 77, 161, 201)),
               ),
-              //empresa
+              // Empresa
               TextFormField(
                 controller: empresaController,
-                enableInteractiveSelection: false,
-                autofocus: true,
-                textCapitalization: TextCapitalization.characters,
+                focusNode: empresaFocusNode,
                 decoration: const InputDecoration(
-                  hintText: "Dijita las siglas",
-                  labelText: "Empresa",
-                  suffixIcon: Icon(Icons.verified_user),
+                  hintText: 'Empresa',
+                  labelText: 'Empresa',
+                  suffixIcon: Icon(Icons.business),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(20.0)),
                   ),
@@ -72,14 +169,14 @@ class _MyAppFormState extends State<MyAppForm> {
                 },
               ),
               const SizedBox(height: 18.0),
-              //usuario
+              // Usuario
               TextFormField(
                 controller: usuarioController,
                 focusNode: usuarioFocusNode,
                 decoration: const InputDecoration(
-                  hintText: 'Usuario',
-                  labelText: 'Usuario',
-                  suffixIcon: Icon(Icons.account_circle),
+                  hintText: 'Correo electrónico',
+                  labelText: 'Correo electrónico',
+                  suffixIcon: Icon(Icons.email),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(20.0)),
                   ),
@@ -88,7 +185,7 @@ class _MyAppFormState extends State<MyAppForm> {
                   FocusScope.of(context).requestFocus(passwordFocusNode);
                 },
               ),
-              //pasword
+              // Contraseña
               const SizedBox(height: 20),
               TextFormField(
                 controller: passwordController,
@@ -106,39 +203,11 @@ class _MyAppFormState extends State<MyAppForm> {
               ),
               const SizedBox(height: 18.0),
               ElevatedButton(
-                onPressed: () {
-                  String empresa = empresaController.text;
-                  String usuario = usuarioController.text;
-                  String password = passwordController.text;
-
-                  if (empresa.isEmpty || usuario.isEmpty || password.isEmpty) {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text('Error'),
-                          content: const Text('favor de llenar el formulario'),
-                          actions: [
-                            TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Ok'))
-                          ],
-                        );
-                      },
-                    );
-                  } else {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const MainMenu()));
-                  }
-                },
+                onPressed: iniciarSesion,
                 child: const Text('Iniciar sesión'),
               ),
             ],
-          )
+          ),
         ],
       ),
     );

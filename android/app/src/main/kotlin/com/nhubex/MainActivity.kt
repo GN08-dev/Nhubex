@@ -1,4 +1,4 @@
-package com.example.flutter_proyect
+package com.nhubex
 
 import io.flutter.embedding.android.FlutterActivity
 
