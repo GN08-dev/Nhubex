@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/mes_dropdowmn_button.dart';
-import 'package:fl_chart/fl_chart.dart'; // Asegúrate de importar el paquete para el gráfico de barras
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GraphBar extends StatefulWidget {
   const GraphBar({super.key});
@@ -15,7 +15,8 @@ class GraphBar extends StatefulWidget {
 class _GraphBarState extends State<GraphBar> {
   dynamic? datosTemporales;
   bool loading = false;
-  String selectedMes = '1';
+  String selectedMes = '1'; // Valor predeterminado del mes seleccionado
+  String selectedMesAnterior = '1'; //almacenar el mes selecionado anteriormente
 
   final Map<String, String> meses = {
     'Enero': '1',
@@ -35,37 +36,78 @@ class _GraphBarState extends State<GraphBar> {
   @override
   void initState() {
     super.initState();
-    getData(selectedMes);
+    loadSelectedMes();
+  }
+
+  Future<void> loadSelectedMes() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedMes = prefs.getString('selectedMes');
+    if (savedMes != null) {
+      setState(() {
+        selectedMes = savedMes;
+      });
+      getData(selectedMes);
+    }
   }
 
   Future<void> getData(String selectedMes) async {
     setState(() {
       loading = true;
     });
-    try {
-      final response = await Dio().get(
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/PE?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%22Mes%22:%22$selectedMes%22%7D%7D&format=JSON&isFront=true',
-      );
-      if (response.statusCode == 200) {
-        setState(() {
-          datosTemporales = json.decode(response.data);
-          loading = false;
-        });
-      } else {
-        setState(() {
-          loading = false;
-        });
-        throw Exception('Failed to load data');
-      }
-    } catch (e) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachedData = prefs.getString('cachedData_$selectedMes');
+
+    if (cachedData != null) {
+      // Si hay datos en el caché, usarlos en lugar de hacer la solicitud nuevamente
       setState(() {
+        datosTemporales = json.decode(cachedData);
         loading = false;
       });
-      print('Error: $e');
+    } else {
+      try {
+        // Limpiar el caché del mes anterior si existe
+        await prefs.remove('cachedData_$selectedMesAnterior');
+
+        final response = await Dio().get(
+          'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/PE?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%22Mes%22:%22$selectedMes%22%7D%7D&format=JSON&isFront=true',
+        );
+        if (response.statusCode == 200) {
+          if (mounted) {
+            setState(() {
+              datosTemporales = json.decode(response.data);
+              loading = false;
+            });
+          }
+
+          // Guardar los datos en el caché
+          await prefs.setString(
+              'cachedData_$selectedMes', json.encode(response.data));
+
+          // Actualizar el mes seleccionado anterior
+          if (mounted) {
+            setState(() {
+              selectedMesAnterior = selectedMes;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              loading = false;
+            });
+          }
+          throw Exception('Failed to load data');
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            loading = false;
+          });
+        }
+        print('Error: $e');
+      }
     }
   }
 
-  // Método para calcular el total de ventas por sucursal
   Map<String, double> calcularTotalVentas() {
     Map<String, double> totalVentasPorSucursal = {};
 
@@ -102,6 +144,11 @@ class _GraphBarState extends State<GraphBar> {
                     selectedMes = newValue;
                   });
                   getData(selectedMes);
+                  // Limpiar el caché del mes anterior y guardar el nuevo mes seleccionado
+                  SharedPreferences.getInstance().then((prefs) {
+                    prefs.remove('cachedData_$selectedMesAnterior');
+                    prefs.setString('selectedMes', selectedMes);
+                  });
                 }
               },
             )

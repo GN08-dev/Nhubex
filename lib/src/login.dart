@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_proyect/models/EmpresaImageHelper.dart';
 
 class MyAppForm extends StatefulWidget {
-  const MyAppForm({Key? key}) : super(key: key);
+  const MyAppForm({super.key});
 
   @override
   State<MyAppForm> createState() => _MyAppFormState();

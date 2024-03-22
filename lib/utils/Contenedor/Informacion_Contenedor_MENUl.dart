@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_proyect/components/home_page.dart';
 import 'package:flutter_proyect/models/PolyElectric/graph.ventas.dart';
 import 'package:flutter_proyect/models/PolyElectric/miau.dart';
+import 'package:flutter_proyect/utils/Contenedor/AppBarVentas.dart';
 
 class Informacion extends StatelessWidget {
-  const Informacion({Key? key});
+  const Informacion({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +80,10 @@ class Informacion extends StatelessWidget {
                     height: 60,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Acción para el segundo botón
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const HomePage1()));
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
