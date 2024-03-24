@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/home_page.dart';
+import 'package:flutter_proyect/models/PolyElectric/graph.ventas.dart';
+import 'package:flutter_proyect/models/PolyElectric/miau.dart';
 import 'package:flutter_proyect/router/router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_proyect/src/login.dart';
@@ -24,7 +26,7 @@ class MyApp extends StatelessWidget {
       title: 'NHUBEX',
       initialRoute: '/',
       onGenerateRoute: AppRouter.generateRoute,
-      home: MyAppForm(),
+      home: Ventas(),
     );
   }
 }
