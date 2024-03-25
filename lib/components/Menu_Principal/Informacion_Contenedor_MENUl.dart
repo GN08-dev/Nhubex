@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Paginas/home_page.dart';
-import 'package:flutter_proyect/models/Pruebas/graph.ventas.dart';
-import 'package:flutter_proyect/models/Pruebas/miau.dart';
 
 class Informacion extends StatelessWidget {
   const Informacion({super.key});
