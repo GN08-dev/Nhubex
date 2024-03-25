@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:charts_flutter_new/flutter.dart';
 
 class Pagina2 extends StatelessWidget {
   const Pagina2({super.key});
@@ -11,4 +12,11 @@ class Pagina2 extends StatelessWidget {
       ),
     );
   }
+}
+
+class Expenses {
+  final int day;
+  final double expense;
+
+  Expenses(this.day, this.expense);
 }

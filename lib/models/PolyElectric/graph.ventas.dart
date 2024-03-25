@@ -1,8 +1,8 @@
 import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 class Ventas extends StatefulWidget {
   const Ventas({Key? key});
@@ -12,10 +12,11 @@ class Ventas extends StatefulWidget {
 }
 
 class _VentasState extends State<Ventas> {
-  List<dynamic> datosTemporales = []; // Cambiado a una lista vacía inicialmente
-  bool loading = false;
-  String selectedMes = '1';
-  String selectedMesAnterior = '1';
+  List<dynamic> datosTemporales =
+      []; // Lista para almacenar los datos temporales
+  bool loading = false; // Indicador de carga
+  String selectedMes = '1'; // Mes seleccionado inicialmente
+  String selectedMesAnterior = '1'; // Mes anterior seleccionado
 
   final Map<String, String> meses = {
     'Enero': '1',
@@ -35,9 +36,10 @@ class _VentasState extends State<Ventas> {
   @override
   void initState() {
     super.initState();
-    loadSelectedMes();
+    loadSelectedMes(); // Cargar el mes seleccionado al iniciar la aplicación
   }
 
+  // Método para cargar el mes seleccionado desde SharedPreferences
   Future<void> loadSelectedMes() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? savedMes = prefs.getString('selectedMes');
@@ -45,13 +47,14 @@ class _VentasState extends State<Ventas> {
       setState(() {
         selectedMes = savedMes;
       });
-      getData(selectedMes);
+      getData(selectedMes); // Obtener datos para el mes seleccionado
     }
   }
 
+  // Método para obtener datos del servidor para un mes dado
   Future<void> getData(String selectedMes) async {
     setState(() {
-      loading = true;
+      loading = true; // Iniciar indicador de carga
     });
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -66,7 +69,7 @@ class _VentasState extends State<Ventas> {
         // Actualizar los datos temporales con los nuevos datos
         setState(() {
           datosTemporales = json.decode(response.data)["RESPUESTA"]["registro"];
-          loading = false;
+          loading = false; // Detener indicador de carga
         });
 
         // Guardar el nuevo mes seleccionado
@@ -74,54 +77,20 @@ class _VentasState extends State<Ventas> {
           selectedMesAnterior = selectedMes;
         });
 
-        // Guardar el mes seleccionado
+        // Guardar el mes seleccionado en SharedPreferences
         prefs.setString('selectedMes', selectedMes);
       } else {
         setState(() {
-          loading = false;
+          loading = false; // Detener indicador de carga
         });
         throw Exception('Failed to load data');
       }
     } catch (e) {
       setState(() {
-        loading = false;
+        loading = false; // Detener indicador de carga
       });
       print('Error: $e');
     }
-  }
-
-  List<Widget> _buildDataWidgets(List<dynamic> data) {
-    return data.map<Widget>((registro) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Card(
-          elevation: 3,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Fecha: ${registro["Fecha"]}'),
-                Text('Descripcion: ${registro["Descripcion"]}'),
-                Text('IdDiario: ${registro["IdDiario"]}'),
-                Text('IDHub: ${registro["IDHub"]}'),
-                Text('IdM3: ${registro["IdM3"]}'),
-                Text('IdTrx: ${registro["IdTrx"]}'),
-                Text('NDoc: ${registro["NDoc"]}'),
-                Text('NOM_Cliente: ${registro["NOM_Cliente"]}'),
-                Text('Nombre: ${registro["Nombre"]}'),
-                Text('TMIdProceso: ${registro["TMIdProceso"]}'),
-                Text('UUID: ${registro["UUID"]}'),
-                Text('Valor: ${registro["Valor"]}'),
-                Text('ValorNeto: ${registro["ValorNeto"]}'),
-                Text('Vendedor: ${registro["Vendedor"]}'),
-                Text('Vendedor2: ${registro["Vendedor2"]}'),
-              ],
-            ),
-          ),
-        ),
-      );
-    }).toList();
   }
 
   @override
@@ -138,7 +107,8 @@ class _VentasState extends State<Ventas> {
                   setState(() {
                     selectedMes = newValue;
                   });
-                  getData(selectedMes);
+                  getData(
+                      selectedMes); // Obtener datos para el mes seleccionado
                 }
               },
               items: meses.entries.map<DropdownMenuItem<String>>((entry) {
@@ -169,7 +139,29 @@ class _VentasState extends State<Ventas> {
                   : Column(
                       children: [
                         if (datosTemporales.isNotEmpty)
-                          ..._buildDataWidgets(datosTemporales),
+                          Container(
+                            height: 300,
+                            child: SfCartesianChart(
+                              // Configurar el gráfico de barras
+                              primaryXAxis:
+                                  CategoryAxis(), // Eje X para las categorías
+                              series: <ChartSeries>[
+                                // Serie de barras
+                                BarSeries<Map<String, dynamic>, String>(
+                                  // Los datos para la serie son los datos temporales
+                                  dataSource: datosTemporales
+                                      .map((e) => e as Map<String, dynamic>)
+                                      .toList(),
+                                  // Asignar el campo 'Nombre' al eje X (categoría)
+                                  xValueMapper: (datum, _) =>
+                                      datum['Nombre'] as String,
+                                  // Asignar el campo 'ValorNeto' al eje Y (valor)
+                                  yValueMapper: (datum, _) => double.parse(
+                                      datum['ValorNeto'].toString()),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
             ],
