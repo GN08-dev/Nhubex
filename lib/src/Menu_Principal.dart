@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
-import 'package:flutter_proyect/models/EmpresaImageHelper.dart';
-import 'package:flutter_proyect/utils/Contenedor/Informacion_Contenedor_MENUl.dart';
+import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
+import 'package:flutter_proyect/components/Menu_Principal/Informacion_Contenedor_MENUl.dart';
 
 class MainMenu extends StatefulWidget {
   final String companyName; // Campo para almacenar el nombre de la empresa

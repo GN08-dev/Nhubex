@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_proyect/components/home_page.dart';
-import 'package:flutter_proyect/models/PolyElectric/graph.ventas.dart';
-import 'package:flutter_proyect/models/PolyElectric/miau.dart';
-import 'package:flutter_proyect/utils/Contenedor/AppBarVentas.dart';
+import 'package:flutter_proyect/components/Paginas/home_page.dart';
+import 'package:flutter_proyect/models/Pruebas/graph.ventas.dart';
+import 'package:flutter_proyect/models/Pruebas/miau.dart';
 
 class Informacion extends StatelessWidget {
   const Informacion({super.key});
@@ -35,7 +34,7 @@ class Informacion extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const GraphBar()),
+                              builder: (context) => const HomePage()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -83,7 +82,7 @@ class Informacion extends StatelessWidget {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const HomePage1()));
+                                builder: (context) => const HomePage()));
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(

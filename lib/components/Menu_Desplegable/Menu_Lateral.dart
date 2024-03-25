@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
-import 'package:flutter_proyect/utils/Menu_Desplegable/TitulosDeMenu.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/TitulosDeMenu.dart';
 
 class SideMenu extends StatefulWidget {
   const SideMenu({super.key});

@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_proyect/models/PolyElectric/ventas1.dart';
-import 'package:flutter_proyect/models/PolyElectric/Page2.dart';
-import 'package:flutter_proyect/models/PolyElectric/Page3.dart';
-import 'package:flutter_proyect/models/PolyElectric/graph.ventas.dart';
+import 'package:flutter_proyect/models/Pruebas/graph.ventas.dart';
+import 'package:flutter_proyect/models/Ventas/Filter_Week.dart';
+import 'package:flutter_proyect/models/Ventas/Today.dart';
+import 'package:flutter_proyect/models/Ventas/MesVentas.dart';
 
-class HomePage1 extends StatefulWidget {
-  const HomePage1({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<HomePage1> createState() => _HomePage1State();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePage1State extends State<HomePage1>
+class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   late TabController controller;
 
@@ -34,8 +34,7 @@ class _HomePage1State extends State<HomePage1>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor:
-            Color.fromARGB(255, 55, 70, 238), // Color de fondo del AppBar
+        backgroundColor: Colors.blue[300], // Cambio del color del AppBar
         title: const Text('appbar'),
         titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
         centerTitle: true,
@@ -51,27 +50,23 @@ class _HomePage1State extends State<HomePage1>
               padding: EdgeInsets.only(bottom: 5),
               child: SizedBox(
                 width: 80, // Ancho adecuado para la pestaña
-                child: Center(child: Text('primera')),
+                child: Center(child: Text('Dia')),
               ),
             ),
             SizedBox(
               width: 80, // Ancho adecuado para la pestaña
-              child: Center(child: Text('segunda')),
+              child: Center(child: Text('Semana')),
             ),
             SizedBox(
               width: 80, // Ancho adecuado para la pestaña
-              child: Center(child: Text('tercera')),
+              child: Center(child: Text('Mes')),
             ),
           ],
         ),
       ),
       body: TabBarView(
         controller: controller,
-        children: const [
-          Ventas1(),
-          Pagina2(),
-          Pagina3(),
-        ],
+        children: const [DiaVentas(), VentasXSemana(), MesVentas()],
       ),
     );
   }

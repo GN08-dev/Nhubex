@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/src/Menu_Principal.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_proyect/models/EmpresaImageHelper.dart';
+import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
 
 class MyAppForm extends StatefulWidget {
   const MyAppForm({super.key});
@@ -57,6 +57,25 @@ class _MyAppFormState extends State<MyAppForm> {
           return AlertDialog(
             title: const Text('Error'),
             content: const Text('Favor de llenar el formulario'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Ok'),
+              )
+            ],
+          );
+        },
+      );
+    } else if (!EmpresaImageHelper.empresaSiglas
+        .containsKey(empresa.toLowerCase())) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Empresa no válida'),
             actions: [
               TextButton(
                 onPressed: () {
