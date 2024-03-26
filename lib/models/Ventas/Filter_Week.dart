@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class VentasXSemana extends StatelessWidget {
   final List<dynamic> datosTemporales;
 
-  const VentasXSemana({Key? key, required this.datosTemporales});
+  const VentasXSemana({super.key, required this.datosTemporales});
 
   List<Widget> _buildDataWidgets(List<dynamic> data) {
     return data.map<Widget>((registro) {
@@ -17,7 +17,9 @@ class VentasXSemana extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Fecha: ${registro["Fecha"]}'),
-                // Otros campos de visualización...
+                Text('ValorNeto: ${registro["ValorNeto"]}'),
+                Text('Vendedor: ${registro["Vendedor"]}'),
+                Text('Vendedor2: ${registro["Vendedor2"]}'),
               ],
             ),
           ),
@@ -28,7 +30,6 @@ class VentasXSemana extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Obtener la fecha actual
     DateTime now = DateTime.now();
     // Obtener el primer día de la semana (lunes)
     DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
@@ -44,7 +45,6 @@ class VentasXSemana extends StatelessWidget {
           fecha.isBefore(endOfWeek.add(Duration(days: 1)));
     }).toList();
 
-    // Imprimir los datos de la semana para depurar
     print('Datos de la semana: $datosSemana');
 
     return Scaffold(

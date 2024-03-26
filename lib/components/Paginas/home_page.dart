@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_proyect/models/Pruebas/buldin.dart';
 import 'package:flutter_proyect/models/Ventas/Filter_Week.dart';
 import 'package:flutter_proyect/models/Ventas/Today.dart';
-import 'package:flutter_proyect/models/Ventas/MesVentas.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
@@ -114,9 +113,10 @@ class _HomePageState extends State<HomePage>
       body: TabBarView(
         controller: controller,
         children: [
+          DiaVentas(datosTemporales: datosTemporales),
           VentasXSemana(datosTemporales: datosTemporales),
-          const DiaVentas(),
           MesBuild(datosTemporales: datosTemporales),
+          //MesVentas(datosTemporales: datosTemporales,)
         ],
       ),
     );
