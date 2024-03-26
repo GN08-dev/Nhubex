@@ -1,10 +1,15 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_proyect/models/Pruebas/buldin.dart';
 import 'package:flutter_proyect/models/Ventas/Filter_Week.dart';
 import 'package:flutter_proyect/models/Ventas/Today.dart';
 import 'package:flutter_proyect/models/Ventas/MesVentas.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -12,6 +17,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
+  List<dynamic> datosTemporales = [];
+  bool loading = false;
+  double totalValorNeto = 0.0;
+  String mejorSucursal = '';
+  String mejorVendedor = '';
   late TabController controller;
 
   @override
@@ -20,7 +30,45 @@ class _HomePageState extends State<HomePage>
     controller.addListener(() {
       setState(() {});
     });
+    getData();
     super.initState();
+  }
+
+  Future<void> getData() async {
+    setState(() {
+      loading = true;
+    });
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    try {
+      final response = await Dio().get(
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/pe?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%7D%7D&format=JSON&isFront=true',
+      );
+      if (response.statusCode == 200) {
+        if (mounted) {
+          setState(() {
+            datosTemporales =
+                json.decode(response.data)["RESPUESTA"]["registro"];
+            loading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            loading = false;
+          });
+        }
+        throw Exception('Failed to load data');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+      print('Error: $e');
+    }
   }
 
   @override
@@ -65,7 +113,11 @@ class _HomePageState extends State<HomePage>
       ),
       body: TabBarView(
         controller: controller,
-        children: const [DiaVentas(), VentasXSemana(), MesVentas()],
+        children: [
+          VentasXSemana(datosTemporales: datosTemporales),
+          const DiaVentas(),
+          MesBuild(datosTemporales: datosTemporales),
+        ],
       ),
     );
   }

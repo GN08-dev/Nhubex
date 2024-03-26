@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class MesBuild extends StatefulWidget {
   final List<dynamic> datosTemporales;
 
-  const MesBuild({super.key, required this.datosTemporales});
+  const MesBuild({Key? key, required this.datosTemporales}) : super(key: key);
 
   @override
   _MesBuildState createState() => _MesBuildState();
@@ -53,6 +53,40 @@ class _MesBuildState extends State<MesBuild> {
         vendedorCount.entries.reduce((a, b) => a.value > b.value ? a : b).key;
   }
 
+  List<Widget> _buildDataWidgets(List<dynamic> data) {
+    return data.map<Widget>((registro) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Card(
+          elevation: 3,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Fecha: ${registro["Fecha"]}'),
+                Text('Descripcion: ${registro["Descripcion"]}'),
+                Text('IdDiario: ${registro["IdDiario"]}'),
+                Text('IDHub: ${registro["IDHub"]}'),
+                Text('IdM3: ${registro["IdM3"]}'),
+                Text('IdTrx: ${registro["IdTrx"]}'),
+                Text('NDoc: ${registro["NDoc"]}'),
+                Text('NOM_Cliente: ${registro["NOM_Cliente"]}'),
+                Text('Nombre: ${registro["Nombre"]}'),
+                Text('TMIdProceso: ${registro["TMIdProceso"]}'),
+                Text('UUID: ${registro["UUID"]}'),
+                Text('Valor: ${registro["Valor"]}'),
+                Text('ValorNeto: ${registro["ValorNeto"]}'),
+                Text('Vendedor: ${registro["Vendedor"]}'),
+                Text('Vendedor2: ${registro["Vendedor2"]}'),
+              ],
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,9 +99,9 @@ class _MesBuildState extends State<MesBuild> {
                   Container(
                     height: 300,
                     color: Colors.white,
-                    child: const LineChartSample2(),
                     // Puedes mostrar un gráfico o cualquier otro widget aquí
                   ),
+
                   Container(
                     padding: const EdgeInsets.all(16),
                     color: Colors.white,
@@ -99,6 +133,8 @@ class _MesBuildState extends State<MesBuild> {
                       ],
                     ),
                   ),
+                  // Datos de ventas
+                  //..._buildDataWidgets(datosTemporales),
                 ],
               ),
             ),

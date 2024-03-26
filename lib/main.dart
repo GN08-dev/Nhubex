@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
       title: 'NHUBEX',
       initialRoute: '/',
       onGenerateRoute: AppRouter.generateRoute,
-      home: MesBuild(),
+      home: HomePage(),
     );
   }
 }
