@@ -6,7 +6,7 @@ import 'package:flutter_proyect/components/Menu_Principal/Informacion_Contenedor
 class MainMenu extends StatefulWidget {
   final String companyName; // Campo para almacenar el nombre de la empresa
 
-  const MainMenu({super.key, required this.companyName});
+  const MainMenu({Key? key, required this.companyName});
 
   @override
   State<MainMenu> createState() => _MainMenuState();
@@ -19,9 +19,9 @@ class _MainMenuState extends State<MainMenu> {
       backgroundColor: Colors.white,
       drawer: const SideMenu(),
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(179, 47, 98, 207),
+        backgroundColor: Colors.blue[300],
         title: Text(
-          widget.companyName, // Usar el nombre de la empresa proporcionado
+          widget.companyName,
           style: const TextStyle(color: Colors.black),
         ),
       ),
@@ -35,7 +35,7 @@ class _MainMenuState extends State<MainMenu> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black),
                 ),
-                child: const Informacion(),
+                child: Informacion(companyName: widget.companyName),
               ),
             )
           ],

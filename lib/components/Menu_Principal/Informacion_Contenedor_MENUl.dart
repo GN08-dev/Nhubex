@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Paginas/home_page.dart';
 
 class Informacion extends StatelessWidget {
-  const Informacion({super.key});
+  final String companyName;
+
+  const Informacion({Key? key, required this.companyName});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +34,9 @@ class Informacion extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const HomePage()),
+                            builder: (context) =>
+                                HomePage(companyName: companyName),
+                          ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -68,7 +72,6 @@ class Informacion extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 //segundo botton
                 const SizedBox(width: 10), // Espacio entre botones
                 Expanded(
@@ -78,9 +81,12 @@ class Informacion extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const HomePage()));
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                HomePage(companyName: companyName),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(

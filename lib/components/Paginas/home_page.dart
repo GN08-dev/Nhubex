@@ -2,13 +2,17 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_proyect/components/Button/Sucursales.dart';
+import 'package:flutter_proyect/components/Graph/Grafica_linea.dart';
 import 'package:flutter_proyect/models/Pruebas/buldin.dart';
 import 'package:flutter_proyect/models/Ventas/Filter_Week.dart';
 import 'package:flutter_proyect/models/Ventas/Today.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String companyName; // Nombre de la empresa
+
+  const HomePage({Key? key, required this.companyName});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -18,9 +22,6 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   List<dynamic> datosTemporales = [];
   bool loading = false;
-  double totalValorNeto = 0.0;
-  String mejorSucursal = '';
-  String mejorVendedor = '';
   late TabController controller;
 
   @override
@@ -41,24 +42,62 @@ class _HomePageState extends State<HomePage>
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     try {
-      final response = await Dio().get(
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/pe?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%7D%7D&format=JSON&isFront=true',
-      );
-      if (response.statusCode == 200) {
-        if (mounted) {
-          setState(() {
-            datosTemporales =
-                json.decode(response.data)["RESPUESTA"]["registro"];
-            loading = false;
-          });
+      if (widget.companyName == 'POLY ELECTRIC') {
+        final response = await Dio().get(
+          'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/pe?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%7D%7D&format=JSON&isFront=true',
+        );
+        if (response.statusCode == 200) {
+          if (mounted) {
+            setState(() {
+              datosTemporales =
+                  json.decode(response.data)["RESPUESTA"]["registro"];
+              loading = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              loading = false;
+            });
+          }
+          throw Exception('Failed to load data');
         }
-      } else {
-        if (mounted) {
-          setState(() {
-            loading = false;
-          });
-        }
-        throw Exception('Failed to load data');
+      } else if (widget.companyName == 'VEANA') {
+        // Aquí colocar la URL para VEANA
+      } else if (widget.companyName == 'GTRIUNFO') {
+        // Aquí colocar la URL para GTRIUNFO
+      } else if (widget.companyName == 'NIETO') {
+        // Aquí colocar la URL para NIETO
+      } else if (widget.companyName == 'PAVEL') {
+        // Aquí colocar la URL para PAVEL
+      } else if (widget.companyName == 'SHYLA') {
+        // Aquí colocar la URL para SHYLA
+      } else if (widget.companyName == 'PBD5') {
+        // Aquí colocar la URL para PBD5
+      } else if (widget.companyName == 'CONTINIO') {
+        // Aquí colocar la URL para CONTINIO
+      }
+
+      if (datosTemporales.isEmpty) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text('Información'),
+              content: Text(
+                'Por el momento, no hay información disponible para los reportes de ${widget.companyName}.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Cerrar'),
+                ),
+              ],
+            );
+          },
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -81,8 +120,8 @@ class _HomePageState extends State<HomePage>
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue[300], // Cambio del color del AppBar
-        title: const Text('appbar'),
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
+        title: Text(widget.companyName), // Mostrar el nombre de la empresa
+        titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20),
         centerTitle: true,
         elevation: 10,
         bottom: TabBar(
@@ -116,7 +155,6 @@ class _HomePageState extends State<HomePage>
           DiaVentas(datosTemporales: datosTemporales),
           VentasXSemana(datosTemporales: datosTemporales),
           MesBuild(datosTemporales: datosTemporales),
-          //MesVentas(datosTemporales: datosTemporales,)
         ],
       ),
     );
