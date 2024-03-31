@@ -34,6 +34,7 @@ class _HomePageState extends State<HomePage>
       loading = true;
     });
 
+    // ignore: unused_local_variable
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     try {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Paginas/home_page.dart';
-import 'package:flutter_proyect/models/Ventas%20Mes%20ACT/Mes.dart';
-import 'package:flutter_proyect/models/Ventas%20Mes%20ACT/Semana.dart';
-import 'package:flutter_proyect/models/Ventas%20Mes%20ACT/Today.dart';
+import 'package:flutter_proyect/models/Ventas/Mes.dart';
+import 'package:flutter_proyect/models/Ventas/Semana.dart';
+import 'package:flutter_proyect/models/Ventas/Today.dart';
 
 class ReportesDelMesActual extends StatelessWidget {
   final String companyName;
