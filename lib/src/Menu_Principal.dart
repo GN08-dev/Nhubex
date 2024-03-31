@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
 import 'package:flutter_proyect/components/Menu_Principal/Informacion_Contenedor_MENUl.dart';
+// ignore: unused_import
 import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
 
 class MainMenu extends StatefulWidget {

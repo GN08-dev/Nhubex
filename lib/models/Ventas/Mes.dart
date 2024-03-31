@@ -4,21 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:charts_flutter_new/flutter.dart' as charts;
 import 'package:intl/intl.dart';
 
-class VentasXSemanaPrueba extends StatefulWidget {
+class MesVentas extends StatefulWidget {
   final String companyName;
 
-  const VentasXSemanaPrueba({Key? key, required this.companyName})
-      : super(key: key);
+  const MesVentas({Key? key, required this.companyName}) : super(key: key);
 
   @override
-  _VentasXSemanaPruebaState createState() => _VentasXSemanaPruebaState();
+  _MesVentasState createState() => _MesVentasState();
 }
 
-class _VentasXSemanaPruebaState extends State<VentasXSemanaPrueba> {
+class _MesVentasState extends State<MesVentas> {
   bool loading = false;
   double totalValorNetoSemana = 0.0;
   String mejorSucursal = '';
   String mejorVendedor = '';
+  double totalVentasMejorVendedor = 0.0; // Total de ventas del mejor vendedor
   late List<dynamic> datosTemporales;
   late List<double> ventasPorDiaList = List.filled(7, 0.0);
   late int currentDayOfWeek;
@@ -86,12 +86,14 @@ class _VentasXSemanaPruebaState extends State<VentasXSemanaPrueba> {
     // Obtener el primer día de la semana (lunes)
     DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
 
-    // Filtrar los datos de la última semana
+    // Filtrar los datos de la última semana y la sucursal seleccionada
     List<dynamic> datosSemana = datosTemporales.where((registro) {
       // Convertir la fecha del registro a DateTime
       DateTime fecha = DateTime.parse(registro["Fecha"]);
       // Verificar si la fecha está dentro de la última semana
-      return fecha.isAfter(startOfWeek.subtract(const Duration(days: 1)));
+      return fecha.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
+          (selectedSucursal == 'Todas las Sucursales' ||
+              registro['Nombre'] == selectedSucursal);
     }).toList();
 
     // Inicializar el arreglo de datos para la gráfica
@@ -124,11 +126,6 @@ class _VentasXSemanaPruebaState extends State<VentasXSemanaPrueba> {
     totalValorNetoSemana = ventasPorDiaList.fold(
         0.0, (previousValue, element) => previousValue + element);
 
-    // Imprimir las fechas y los totales por día
-    ventasPorDia.forEach((fecha, total) {
-      print('$fecha: \$${total.toStringAsFixed(2)}');
-    });
-
     // Encontrar la sucursal con más ventas
     Map<String, double> ventasPorSucursal = {};
     datosSemana.forEach((registro) {
@@ -156,11 +153,22 @@ class _VentasXSemanaPruebaState extends State<VentasXSemanaPrueba> {
     mejorVendedor = conteoVendedores.entries
         .reduce((a, b) => a.value > b.value ? a : b)
         .key;
+
+    // Encontrar el total de ventas del mejor vendedor
+    totalVentasMejorVendedor = datosSemana
+        .where((registro) =>
+            registro["Nombre"] == mejorSucursal &&
+            registro["Vendedor"] == mejorVendedor)
+        .map((registro) => double.parse(registro["ValorNeto"] ?? '0'))
+        .fold(0, (previousValue, valorNeto) => previousValue + valorNeto);
   }
 
   @override
   Widget build(BuildContext context) {
     String currentMonth = DateFormat('MMMM').format(DateTime.now());
+
+    // ignore: unused_local_variable
+    double maxValue = 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -228,83 +236,73 @@ class _VentasXSemanaPruebaState extends State<VentasXSemanaPrueba> {
                     ),
                     const SizedBox(height: 10),
                     _buildContainerWithBackground(
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.attach_money,
-                            size: 45,
-                            color: Color.fromARGB(255, 2, 128, 8),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Venta total:',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '\$${totalValorNetoSemana.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: Row(children: [
+                        const Icon(
+                          Icons.attach_money,
+                          size: 45,
+                          color: Color.fromARGB(255, 2, 128, 8),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Venta total:',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '\$${totalValorNetoSemana.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ]),
                     ),
                     const SizedBox(height: 15),
                     _buildContainerWithBackground(
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            size: 45,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            selectedSucursal == 'Todas las Sucursales'
-                                ? 'Suc.Estrella'
-                                : 'Sucursal',
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '$mejorSucursal',
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
+                      child: Row(children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 45,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          selectedSucursal == 'Todas las Sucursales'
+                              ? 'Suc.Estrella'
+                              : 'Sucursal',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '$mejorSucursal',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ]),
                     ),
                     const SizedBox(height: 15),
                     _buildContainerWithBackground(
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.star_border_purple500_outlined,
-                            size: 45,
-                            color: Color.fromARGB(255, 249, 168, 37),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Mejor vendedor',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '$mejorVendedor',
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
+                      child: Row(children: [
+                        const Icon(
+                          Icons.star_border_purple500_outlined,
+                          size: 45,
+                          color: Color.fromARGB(255, 249, 168, 37),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Mejor vendedor',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '$mejorVendedor',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ]),
                     ),
-                    const SizedBox(
-                      height: 15,
-                    ),
+                    const SizedBox(height: 15),
                     _buildContainerWithBackground(
                       child: Row(children: [
                         const Icon(
@@ -319,7 +317,7 @@ class _VentasXSemanaPruebaState extends State<VentasXSemanaPrueba> {
                         ),
                         const Spacer(),
                         Text(
-                          '\$${totalValorNetoSemana.toStringAsFixed(2)}',
+                          '\$${totalVentasMejorVendedor.toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         )
@@ -392,9 +390,15 @@ class SalesLineChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double maxValue = seriesList
-        .expand((series) => series.data.map((data) => data.sales))
-        .reduce((value, element) => value > element ? value : element);
+    // ignore: unused_local_variable
+    double maxValue = 0.0; // Valor inicial
+
+    if (seriesList.isNotEmpty) {
+      // Si seriesList no está vacía, se puede calcular el valor máximo
+      maxValue = seriesList
+          .expand((series) => series.data.map((data) => data.sales))
+          .reduce((value, element) => value > element ? value : element);
+    }
 
     return charts.LineChart(
       seriesList,

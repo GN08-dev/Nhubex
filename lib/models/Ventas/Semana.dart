@@ -4,16 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:charts_flutter_new/flutter.dart' as charts;
 import 'package:intl/intl.dart';
 
-class MesVentas extends StatefulWidget {
+class VentasXSemanaPrueba extends StatefulWidget {
   final String companyName;
 
-  const MesVentas({Key? key, required this.companyName}) : super(key: key);
+  const VentasXSemanaPrueba({Key? key, required this.companyName})
+      : super(key: key);
 
   @override
-  _MesVentasState createState() => _MesVentasState();
+  _VentasXSemanaPruebaState createState() => _VentasXSemanaPruebaState();
 }
 
-class _MesVentasState extends State<MesVentas> {
+class _VentasXSemanaPruebaState extends State<VentasXSemanaPrueba> {
   bool loading = false;
   double totalValorNetoSemana = 0.0;
   String mejorSucursal = '';
@@ -93,6 +94,9 @@ class _MesVentasState extends State<MesVentas> {
       return fecha.isAfter(startOfWeek.subtract(const Duration(days: 1)));
     }).toList();
 
+    // Filtrar los datos por sucursal seleccionada
+    datosSemana = filtrarPorSucursal(datosSemana);
+
     // Inicializar el arreglo de datos para la gráfica
     ventasPorDiaList = List.filled(7, 0.0);
 
@@ -157,11 +161,19 @@ class _MesVentasState extends State<MesVentas> {
         .key;
   }
 
+  List<dynamic> filtrarPorSucursal(List<dynamic> datos) {
+    if (selectedSucursal == 'Todas las Sucursales') {
+      return datos; // No aplicar filtro si se selecciona 'Todas las Sucursales'
+    } else {
+      return datos
+          .where((registro) => registro["Nombre"] == selectedSucursal)
+          .toList();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     String currentMonth = DateFormat('MMMM').format(DateTime.now());
-
-    double maxValue = 0.0; // Valor inicial
 
     return Scaffold(
       appBar: AppBar(
@@ -393,14 +405,10 @@ class SalesLineChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double maxValue = 0.0; // Valor inicial
-
-    if (seriesList.isNotEmpty) {
-      // Si seriesList no está vacía, se puede calcular el valor máximo
-      maxValue = seriesList
-          .expand((series) => series.data.map((data) => data.sales))
-          .reduce((value, element) => value > element ? value : element);
-    }
+    // ignore: unused_local_variable
+    double maxValue = seriesList
+        .expand((series) => series.data.map((data) => data.sales))
+        .reduce((value, element) => value > element ? value : element);
 
     return charts.LineChart(
       seriesList,
