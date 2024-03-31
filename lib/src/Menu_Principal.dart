@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
-import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
 import 'package:flutter_proyect/components/Menu_Principal/Informacion_Contenedor_MENUl.dart';
+import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
 
 class MainMenu extends StatefulWidget {
   final String companyName; // Campo para almacenar el nombre de la empresa
@@ -35,7 +36,7 @@ class _MainMenuState extends State<MainMenu> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black),
                 ),
-                child: Informacion(companyName: widget.companyName),
+                child: ReportesDelMesActual(companyName: widget.companyName),
               ),
             )
           ],

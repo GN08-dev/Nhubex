@@ -2,11 +2,6 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_proyect/components/Button/Sucursales.dart';
-import 'package:flutter_proyect/components/Graph/Grafica_linea.dart';
-import 'package:flutter_proyect/models/Pruebas/buldin.dart';
-import 'package:flutter_proyect/models/Ventas/Filter_Week.dart';
-import 'package:flutter_proyect/models/Ventas/Today.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
@@ -76,6 +71,26 @@ class _HomePageState extends State<HomePage>
         // Aquí colocar la URL para PBD5
       } else if (widget.companyName == 'CONTINIO') {
         // Aquí colocar la URL para CONTINIO
+      } else {
+        final response = await Dio().get(
+          'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/pe?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%7D%7D&format=JSON&isFront=true',
+        );
+        if (response.statusCode == 200) {
+          if (mounted) {
+            setState(() {
+              datosTemporales =
+                  json.decode(response.data)["RESPUESTA"]["registro"];
+              loading = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              loading = false;
+            });
+          }
+          throw Exception('Failed to load data');
+        }
       }
 
       if (datosTemporales.isEmpty) {
@@ -83,7 +98,7 @@ class _HomePageState extends State<HomePage>
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: Text('Información'),
+              title: const Text('Información'),
               content: Text(
                 'Por el momento, no hay información disponible para los reportes de ${widget.companyName}.',
               ),
@@ -92,7 +107,7 @@ class _HomePageState extends State<HomePage>
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('Cerrar'),
+                  child: const Text('Cerrar'),
                 ),
               ],
             );
@@ -151,11 +166,7 @@ class _HomePageState extends State<HomePage>
       ),
       body: TabBarView(
         controller: controller,
-        children: [
-          DiaVentas(datosTemporales: datosTemporales),
-          VentasXSemana(datosTemporales: datosTemporales),
-          MesBuild(datosTemporales: datosTemporales),
-        ],
+        children: [],
       ),
     );
   }

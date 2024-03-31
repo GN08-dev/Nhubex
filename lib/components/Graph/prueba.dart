@@ -1,15 +1,27 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_proyect/components/Graph/app_colors.dart';
 
-class LineChartSample2 extends StatefulWidget {
-  const LineChartSample2({super.key, required List datosTemporales});
+class LineChartSample3 extends StatefulWidget {
+  const LineChartSample3({
+    Key? key,
+    required this.spots,
+    required this.gradientColors,
+    required this.monthTitles,
+    required this.yValues, // Agregamos yValues como un parámetro requerido
+  }) : super(key: key);
+
+  final List<FlSpot> spots;
+  final List<Color> gradientColors;
+  final List<String> monthTitles;
+  final List<double>
+      yValues; // Declaramos yValues como una lista de valores para el eje Y
 
   @override
-  State<LineChartSample2> createState() => LineChartSample2State();
+  State<LineChartSample3> createState() => LineChartSample3State();
 }
 
-class LineChartSample2State extends State<LineChartSample2> {
+class LineChartSample3State extends State<LineChartSample3> {
   List<Color> gradientColors = [
     AppColors.contentColorCyan,
     AppColors.contentColorBlue,
@@ -17,7 +29,6 @@ class LineChartSample2State extends State<LineChartSample2> {
 
   bool showAvg = false;
 
-//
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
@@ -59,26 +70,16 @@ class LineChartSample2State extends State<LineChartSample2> {
     );
   }
 
-//
   Widget bottomTitleWidgets(double value, TitleMeta meta) {
     const style = TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 16,
     );
     Widget text;
-    switch (value.toInt()) {
-      case 2:
-        text = const Text('MAR', style: style);
-        break;
-      case 5:
-        text = const Text('JUN', style: style);
-        break;
-      case 8:
-        text = const Text('SEP', style: style);
-        break;
-      default:
-        text = const Text('', style: style);
-        break;
+    if (value.toInt() >= 0 && value.toInt() < widget.monthTitles.length) {
+      text = Text(widget.monthTitles[value.toInt()], style: style);
+    } else {
+      text = const Text('', style: style);
     }
 
     return SideTitleWidget(
@@ -93,24 +94,15 @@ class LineChartSample2State extends State<LineChartSample2> {
       fontSize: 15,
     );
     String text;
-    switch (value.toInt()) {
-      case 1:
-        text = '10K';
-        break;
-      case 3:
-        text = '30k';
-        break;
-      case 5:
-        text = '50k';
-        break;
-      default:
-        return Container();
+    if (value.toInt() >= 0 && value.toInt() < widget.yValues.length) {
+      text = widget.yValues[value.toInt()].toStringAsFixed(0);
+    } else {
+      text = '';
     }
 
     return Text(text, style: style, textAlign: TextAlign.left);
   }
 
-//datos
   LineChartData mainData() {
     return LineChartData(
       gridData: FlGridData(
@@ -149,7 +141,7 @@ class LineChartSample2State extends State<LineChartSample2> {
         ),
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
-            showTitles: false,
+            showTitles: true,
             interval: 1,
             getTitlesWidget: leftTitleWidgets,
             reservedSize: 42,
@@ -161,23 +153,16 @@ class LineChartSample2State extends State<LineChartSample2> {
         border: Border.all(color: const Color(0xff37434d)),
       ),
       minX: 0,
-      maxX: 11,
+      maxX: widget.monthTitles.length.toDouble(),
       minY: 0,
-      maxY: 6,
+      maxY: widget.yValues
+          .last, // Establecemos el máximo valor del eje Y como el último valor en la lista yValues
       lineBarsData: [
         LineChartBarData(
-          spots: const [
-            FlSpot(0, 3),
-            FlSpot(2.6, 2),
-            FlSpot(4.9, 5),
-            FlSpot(6.8, 3.1),
-            FlSpot(8, 4),
-            FlSpot(9.5, 3),
-            FlSpot(11, 4),
-          ],
+          spots: widget.spots,
           isCurved: true,
           gradient: LinearGradient(
-            colors: gradientColors,
+            colors: widget.gradientColors,
           ),
           barWidth: 5,
           isStrokeCapRound: true,
@@ -187,7 +172,7 @@ class LineChartSample2State extends State<LineChartSample2> {
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
-              colors: gradientColors
+              colors: widget.gradientColors
                   .map((color) => color.withOpacity(0.3))
                   .toList(),
             ),
@@ -248,26 +233,28 @@ class LineChartSample2State extends State<LineChartSample2> {
         border: Border.all(color: const Color(0xff37434d)),
       ),
       minX: 0,
-      maxX: 11,
+      maxX: widget.monthTitles.length.toDouble(),
       minY: 0,
-      maxY: 6,
+      maxY: widget.yValues
+          .last, // Establecemos el máximo valor del eje Y como el último valor en la lista yValues
       lineBarsData: [
         LineChartBarData(
-          spots: const [
-            FlSpot(0, 3.44),
-            FlSpot(2.6, 3.44),
-            FlSpot(4.9, 3.44),
-            FlSpot(6.8, 3.44),
-            FlSpot(8, 3.44),
-            FlSpot(9.5, 3.44),
-            FlSpot(11, 3.44),
-          ],
+          spots: List.generate(
+              widget.spots.length,
+              (index) => FlSpot(
+                  index.toDouble(),
+                  widget.yValues[
+                      index])), // Generamos los puntos usando los valores de yValues
           isCurved: true,
           gradient: LinearGradient(
             colors: [
-              ColorTween(begin: gradientColors[0], end: gradientColors[1])
+              ColorTween(
+                      begin: widget.gradientColors[0],
+                      end: widget.gradientColors[1])
                   .lerp(0.2)!,
-              ColorTween(begin: gradientColors[0], end: gradientColors[1])
+              ColorTween(
+                      begin: widget.gradientColors[0],
+                      end: widget.gradientColors[1])
                   .lerp(0.2)!,
             ],
           ),
@@ -280,10 +267,14 @@ class LineChartSample2State extends State<LineChartSample2> {
             show: true,
             gradient: LinearGradient(
               colors: [
-                ColorTween(begin: gradientColors[0], end: gradientColors[1])
+                ColorTween(
+                        begin: widget.gradientColors[0],
+                        end: widget.gradientColors[1])
                     .lerp(0.2)!
                     .withOpacity(0.1),
-                ColorTween(begin: gradientColors[0], end: gradientColors[1])
+                ColorTween(
+                        begin: widget.gradientColors[0],
+                        end: widget.gradientColors[1])
                     .lerp(0.2)!
                     .withOpacity(0.1),
               ],

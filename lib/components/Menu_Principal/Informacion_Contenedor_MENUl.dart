@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Paginas/home_page.dart';
+import 'package:flutter_proyect/models/Ventas%20Mes%20ACT/Mes.dart';
+import 'package:flutter_proyect/models/Ventas%20Mes%20ACT/Semana.dart';
+import 'package:flutter_proyect/models/Ventas%20Mes%20ACT/Today.dart';
 
-class Informacion extends StatelessWidget {
+class ReportesDelMesActual extends StatelessWidget {
   final String companyName;
 
-  const Informacion({Key? key, required this.companyName});
+  const ReportesDelMesActual({Key? key, required this.companyName});
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +37,9 @@ class Informacion extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                HomePage(companyName: companyName),
+                            builder: (context) => VentaXDia(
+                              companyName: companyName,
+                            ),
                           ),
                         );
                       },
@@ -59,7 +63,7 @@ class Informacion extends StatelessWidget {
                             ),
                             const SizedBox(width: 5),
                             const Text(
-                              'Ventas',
+                              'Día',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.black,
@@ -84,7 +88,7 @@ class Informacion extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                HomePage(companyName: companyName),
+                                VentasXSemanaPrueba(companyName: companyName),
                           ),
                         );
                       },
@@ -107,7 +111,7 @@ class Informacion extends StatelessWidget {
                             ),
                             SizedBox(width: 5),
                             Text(
-                              'Otro Botón',
+                              'Semana',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.black,
@@ -131,7 +135,13 @@ class Informacion extends StatelessWidget {
                     height: 60,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Acción para el tercer botón
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                MesVentas(companyName: companyName),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -152,7 +162,7 @@ class Informacion extends StatelessWidget {
                             ),
                             SizedBox(width: 5),
                             Text(
-                              'Tercer Botón',
+                              'Mes',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.black,
@@ -171,7 +181,12 @@ class Informacion extends StatelessWidget {
                     height: 60,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Acción para el cuarto botón
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  HomePage(companyName: companyName),
+                            ));
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -192,7 +207,7 @@ class Informacion extends StatelessWidget {
                             ),
                             SizedBox(width: 5),
                             Text(
-                              'Cuarto Botón',
+                              'homepage',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.black,
