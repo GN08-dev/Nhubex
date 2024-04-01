@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 class MesVentas extends StatefulWidget {
   final String companyName;
 
-  const MesVentas({Key? key, required this.companyName}) : super(key: key);
+  const MesVentas({super.key, required this.companyName});
 
   @override
   _MesVentasState createState() => _MesVentasState();
@@ -39,15 +39,20 @@ class _MesVentasState extends State<MesVentas> {
 
     try {
       Response response;
+      String url = '';
+
       if (widget.companyName == 'POLY ELECTRIC') {
-        response = await Dio().get(
-          'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/pe?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%7D%7D&format=JSON&isFront=true',
-        );
-      } else {
-        response = await Dio().get(
-          'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/pe?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%7D%7D&format=JSON&isFront=true',
-        );
-      }
+        url =
+            'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/pe?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%7D%7D&format=JSON&isFront=true';
+      } else if (widget.companyName == 'VEANA') {
+      } else if (widget.companyName == 'GTRIUNFO') {
+      } else if (widget.companyName == 'NIETO') {
+      } else if (widget.companyName == 'PAVEL') {
+      } else if (widget.companyName == 'SHYLA') {
+      } else if (widget.companyName == 'PBD5') {
+      } else if (widget.companyName == 'CONTINIO') {}
+
+      response = await Dio().get(url);
 
       if (response.statusCode == 200) {
         datosTemporales = json.decode(response.data)["RESPUESTA"]["registro"];
@@ -166,10 +171,8 @@ class _MesVentasState extends State<MesVentas> {
   @override
   Widget build(BuildContext context) {
     String currentMonth = DateFormat('MMMM').format(DateTime.now());
-
     // ignore: unused_local_variable
     double maxValue = 0.0;
-
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -195,139 +198,147 @@ class _MesVentasState extends State<MesVentas> {
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Container(
-                padding: EdgeInsets.zero,
-                color: Colors.grey.withOpacity(0.1),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      currentMonth,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '\$${totalValorNetoSemana.toStringAsFixed(2)}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    AspectRatio(
-                      aspectRatio: 1.70,
-                      child: Padding(
-                        padding: EdgeInsets.zero,
-                        child: SalesLineChart(
-                          _createSampleData(),
-                          animate: true,
+          : totalValorNetoSemana == 0.0
+              ? Center(
+                  child: Text(
+                    'No hay datos del mes ${widget.companyName}',
+                    style: const TextStyle(
+                        fontSize: 30, fontWeight: FontWeight.bold),
+                  ),
+                )
+              : SingleChildScrollView(
+                  child: Container(
+                    padding: EdgeInsets.zero,
+                    color: Colors.grey.withOpacity(0.1),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(
+                          height: 10,
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildContainerWithBackground(
-                      child: Row(children: [
-                        const Icon(
-                          Icons.attach_money,
-                          size: 45,
-                          color: Color.fromARGB(255, 2, 128, 8),
+                        Text(
+                          currentMonth,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black54,
+                          ),
                         ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Venta total:',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const Spacer(),
+                        const SizedBox(height: 8),
                         Text(
                           '\$${totalValorNetoSemana.toStringAsFixed(2)}',
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
-                      ]),
+                        AspectRatio(
+                          aspectRatio: 1.70,
+                          child: Padding(
+                            padding: EdgeInsets.zero,
+                            child: SalesLineChart(
+                              _createSampleData(),
+                              animate: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _buildContainerWithBackground(
+                          child: Row(children: [
+                            const Icon(
+                              Icons.attach_money,
+                              size: 45,
+                              color: Color.fromARGB(255, 2, 128, 8),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Venta total:',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '\$${totalValorNetoSemana.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ]),
+                        ),
+                        const SizedBox(height: 15),
+                        _buildContainerWithBackground(
+                          child: Row(children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 45,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              selectedSucursal == 'Todas las Sucursales'
+                                  ? 'Suc.Estrella'
+                                  : 'Sucursal',
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '$mejorSucursal',
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ]),
+                        ),
+                        const SizedBox(height: 15),
+                        _buildContainerWithBackground(
+                          child: Row(children: [
+                            const Icon(
+                              Icons.star_border_purple500_outlined,
+                              size: 45,
+                              color: Color.fromARGB(255, 249, 168, 37),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Mejor vendedor',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '$mejorVendedor',
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ]),
+                        ),
+                        const SizedBox(height: 15),
+                        _buildContainerWithBackground(
+                          child: Row(children: [
+                            const Icon(
+                              Icons.shopping_cart,
+                              size: 45,
+                              color: Colors.blue,
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Ventas',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '\$${totalVentasMejorVendedor.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            )
+                          ]),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
-                    const SizedBox(height: 15),
-                    _buildContainerWithBackground(
-                      child: Row(children: [
-                        const Icon(
-                          Icons.location_on,
-                          size: 45,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          selectedSucursal == 'Todas las Sucursales'
-                              ? 'Suc.Estrella'
-                              : 'Sucursal',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '$mejorSucursal',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ]),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildContainerWithBackground(
-                      child: Row(children: [
-                        const Icon(
-                          Icons.star_border_purple500_outlined,
-                          size: 45,
-                          color: Color.fromARGB(255, 249, 168, 37),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Mejor vendedor',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '$mejorVendedor',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ]),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildContainerWithBackground(
-                      child: Row(children: [
-                        const Icon(
-                          Icons.shopping_cart,
-                          size: 45,
-                          color: Colors.blue,
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Ventas',
-                          style: TextStyle(fontSize: 18),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '\$${totalVentasMejorVendedor.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        )
-                      ]),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                  ),
                 ),
-              ),
-            ),
     );
   }
 
@@ -351,10 +362,7 @@ class _MesVentasState extends State<MesVentas> {
 
   List<charts.Series<SalesData, int>> _createSampleData() {
     final data = List.generate(7, (index) {
-      return SalesData(
-          index + 1,
-          ventasPorDiaList[
-              index]); // Sumamos 1 para que los días comiencen desde 1
+      return SalesData(index + 1, ventasPorDiaList[index]);
     });
 
     final filteredData = data.where((element) => element.sales > 0.0).toList();

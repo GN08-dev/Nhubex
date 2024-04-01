@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 class VentaXDia extends StatefulWidget {
   final String companyName;
 
-  const VentaXDia({Key? key, required this.companyName}) : super(key: key);
+  const VentaXDia({super.key, required this.companyName});
 
   @override
   _VentaXDiaState createState() => _VentaXDiaState();
@@ -173,7 +173,7 @@ class _VentaXDiaState extends State<VentaXDia> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : totalValorNetoDia == 0.0
-              ? Center(
+              ? const Center(
                   child: Text(
                     'No hay datos disponibles para el día actual.',
                     style: TextStyle(fontSize: 18),

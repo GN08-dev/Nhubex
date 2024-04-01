@@ -75,7 +75,7 @@ class _PruebaState extends State<Prueba> {
       // Convertir la fecha del registro a DateTime
       DateTime fecha = DateTime.parse(registro["Fecha"]);
       // Verificar si la fecha está dentro de la última semana
-      return fecha.isAfter(startOfWeek.subtract(Duration(days: 1)));
+      return fecha.isAfter(startOfWeek.subtract(const Duration(days: 1)));
     }).toList();
 
     // Inicializar el total del valor neto de la semana
@@ -124,7 +124,7 @@ class _PruebaState extends State<Prueba> {
       // Convertir la fecha del registro a DateTime
       DateTime fecha = DateTime.parse(registro["Fecha"]);
       // Verificar si la fecha está dentro de la última semana
-      return fecha.isAfter(startOfWeek.subtract(Duration(days: 1)));
+      return fecha.isAfter(startOfWeek.subtract(const Duration(days: 1)));
     }).toList();
 
     // Mapa para almacenar el total de ventas por sucursal
@@ -187,10 +187,10 @@ class _PruebaState extends State<Prueba> {
                     const SizedBox(
                       height: 10,
                     ),
-                    Text(
+                    const Text(
                       'Total Valor Neto de la Semana',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.black54,
@@ -216,7 +216,7 @@ class _PruebaState extends State<Prueba> {
 
 void main() {
   runApp(
-    MaterialApp(
+    const MaterialApp(
       home: Prueba(companyName: 'POLY ELECTRIC'),
     ),
   );

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_proyect/src/Menu_Principal.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyAppForm extends StatefulWidget {
-  const MyAppForm({super.key});
+  const MyAppForm({Key? key}) : super(key: key);
 
   @override
   State<MyAppForm> createState() => _MyAppFormState();
@@ -27,6 +28,18 @@ class _MyAppFormState extends State<MyAppForm> {
     passwordFocusNode = FocusNode();
 
     empresaController.addListener(actualizarImagen);
+
+    // Llamar a obtenerNombreEmpresa dentro de un bloque async
+    obtenerNombreEmpresa().then((nombreEmpresa) {
+      if (nombreEmpresa != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MainMenu(companyName: nombreEmpresa),
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -51,42 +64,10 @@ class _MyAppFormState extends State<MyAppForm> {
     String password = passwordController.text;
 
     if (empresa.isEmpty || usuario.isEmpty || password.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Favor de llenar el formulario'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Ok'),
-              )
-            ],
-          );
-        },
-      );
+      mostrarAlerta('Error', 'Favor de llenar el formulario');
     } else if (!EmpresaImageHelper.empresaSiglas
         .containsKey(empresa.toLowerCase())) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Empresa no válida'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Ok'),
-              )
-            ],
-          );
-        },
-      );
+      mostrarAlerta('Error', 'Empresa no válida');
     } else {
       try {
         // Iniciar sesión con Firebase Authentication
@@ -98,53 +79,55 @@ class _MyAppFormState extends State<MyAppForm> {
 
         // Verificar si la autenticación fue exitosa
         if (userCredential.user != null) {
+          // Guardar el nombre de la empresa en SharedPreferences
+          await guardarNombreEmpresa(
+              EmpresaImageHelper.getCompanyName(empresa));
+
           // Navegar al menú principal
+          String? nombreEmpresa = await obtenerNombreEmpresa();
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainMenu(
-                  companyName: EmpresaImageHelper.getCompanyName(empresa)),
+              builder: (context) => MainMenu(companyName: nombreEmpresa!),
             ),
           );
         } else {
-          showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('Error'),
-                content: const Text('Credenciales inválidas'),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Ok'),
-                  )
-                ],
-              );
-            },
-          );
+          mostrarAlerta('Error', 'Credenciales inválidas');
         }
       } on FirebaseAuthException catch (e) {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('Error'),
-              content: Text(e.message ?? 'Ocurrió un error'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Ok'),
-                )
-              ],
-            );
-          },
-        );
+        mostrarAlerta('Error', e.message ?? 'Ocurrió un error');
       }
     }
+  }
+
+  Future<void> guardarNombreEmpresa(String nombreEmpresa) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('nombre_empresa', nombreEmpresa);
+  }
+
+  Future<String?> obtenerNombreEmpresa() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('nombre_empresa');
+  }
+
+  void mostrarAlerta(String titulo, String mensaje) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(titulo),
+          content: Text(mensaje),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Ok'),
+            )
+          ],
+        );
+      },
+    );
   }
 
   @override

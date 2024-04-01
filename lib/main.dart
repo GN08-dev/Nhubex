@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/router/router.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_proyect/src/Menu_Principal.dart';
+import 'package:flutter_proyect/src/login.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions
-        .currentPlatform, // Usamos DefaultFirebaseOptions.currentPlatform según la documentación.
+    options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +22,7 @@ class MyApp extends StatelessWidget {
       title: 'NHUBEX',
       initialRoute: '/',
       onGenerateRoute: AppRouter.generateRoute,
-      home: MainMenu(
-        companyName: 'POLY ELECTRIC',
-      ),
+      home: MyAppForm(),
     );
   }
 }

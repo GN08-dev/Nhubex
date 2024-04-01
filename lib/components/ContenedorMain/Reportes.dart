@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_proyect/components/Paginas/home_page.dart';
+import 'package:flutter_proyect/models/Pruebas/home_page.dart';
 import 'package:flutter_proyect/models/Ventas/Mes.dart';
 import 'package:flutter_proyect/models/Ventas/Semana.dart';
 import 'package:flutter_proyect/models/Ventas/Today.dart';
@@ -26,7 +26,6 @@ class ReportesDelMesActual extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              // mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Expanded(
                   child: ButtonTheme(
@@ -53,7 +52,6 @@ class ReportesDelMesActual extends StatelessWidget {
                       //primer botton
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        //alignment: Alignment.center,
                         child: Row(
                           children: [
                             Image.asset(
@@ -77,7 +75,7 @@ class ReportesDelMesActual extends StatelessWidget {
                   ),
                 ),
                 //segundo botton
-                const SizedBox(width: 10), // Espacio entre botones
+                const SizedBox(width: 10),
                 Expanded(
                   child: ButtonTheme(
                     minWidth: 170,
@@ -125,7 +123,7 @@ class ReportesDelMesActual extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10), // Espacio entre filas
+            const SizedBox(height: 10),
             //creacion de sgunda ilera
             Row(
               children: [
@@ -174,7 +172,7 @@ class ReportesDelMesActual extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10), // Espacio entre botones
+                const SizedBox(width: 10),
                 Expanded(
                   child: ButtonTheme(
                     minWidth: 170,

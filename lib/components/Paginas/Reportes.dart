@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
-import 'package:flutter_proyect/components/ContenedorMain/Incio.dart';
+import 'package:flutter_proyect/components/ContenedorMain/Reportes.dart';
 // ignore: unused_import
 import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
 
-class MainMenu extends StatefulWidget {
+class ReportesMain extends StatefulWidget {
   final String companyName;
 
-  const MainMenu({super.key, required this.companyName});
+  const ReportesMain({super.key, required this.companyName});
 
   @override
-  State<MainMenu> createState() => _MainMenuState();
+  State<ReportesMain> createState() => _ReportesMainState();
 }
 
-class _MainMenuState extends State<MainMenu> {
+class _ReportesMainState extends State<ReportesMain> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,17 +30,17 @@ class _MainMenuState extends State<MainMenu> {
           style: TextStyle(color: Colors.black),
         ),
       ),
-      // Cuerpo
       body: Center(
         child: Row(
           children: [
             Expanded(
               child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black),
-                  ),
-                  child: const InicioInfo()),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black),
+                ),
+                child: ReportesDelMesActual(companyName: widget.companyName),
+              ),
             )
           ],
         ),

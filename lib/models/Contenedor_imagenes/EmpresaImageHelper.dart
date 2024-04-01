@@ -1,3 +1,4 @@
+// ignore: file_names
 class EmpresaImageHelper {
   static Map<String, String> empresaSiglas = {
     'pe': 'POLY ELECTRIC',
@@ -35,7 +36,6 @@ class EmpresaImageHelper {
 
   static String getCompanyName(String empresa) {
     String empresaLowerCase = empresa.toLowerCase();
-    return empresaSiglas[empresaLowerCase] ??
-        'Nombre de la Empresa Desconocido';
+    return empresaSiglas[empresaLowerCase] ?? '';
   }
 }

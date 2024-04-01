@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class HomePage extends StatefulWidget {
   final String companyName; // Nombre de la empresa
 
-  const HomePage({Key? key, required this.companyName});
+  const HomePage({super.key, required this.companyName});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -59,19 +59,12 @@ class _HomePageState extends State<HomePage>
           throw Exception('Failed to load data');
         }
       } else if (widget.companyName == 'VEANA') {
-        // Aquí colocar la URL para VEANA
       } else if (widget.companyName == 'GTRIUNFO') {
-        // Aquí colocar la URL para GTRIUNFO
       } else if (widget.companyName == 'NIETO') {
-        // Aquí colocar la URL para NIETO
       } else if (widget.companyName == 'PAVEL') {
-        // Aquí colocar la URL para PAVEL
       } else if (widget.companyName == 'SHYLA') {
-        // Aquí colocar la URL para SHYLA
       } else if (widget.companyName == 'PBD5') {
-        // Aquí colocar la URL para PBD5
       } else if (widget.companyName == 'CONTINIO') {
-        // Aquí colocar la URL para CONTINIO
       } else {
         final response = await Dio().get(
           'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/pe?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%7D%7D&format=JSON&isFront=true',
@@ -135,8 +128,8 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue[300], // Cambio del color del AppBar
-        title: Text(widget.companyName), // Mostrar el nombre de la empresa
+        backgroundColor: Colors.blue[300],
+        title: Text(widget.companyName),
         titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20),
         centerTitle: true,
         elevation: 10,
@@ -150,16 +143,16 @@ class _HomePageState extends State<HomePage>
             Padding(
               padding: EdgeInsets.only(bottom: 5),
               child: SizedBox(
-                width: 80, // Ancho adecuado para la pestaña
+                width: 80,
                 child: Center(child: Text('Dia')),
               ),
             ),
             SizedBox(
-              width: 80, // Ancho adecuado para la pestaña
+              width: 80,
               child: Center(child: Text('Semana')),
             ),
             SizedBox(
-              width: 80, // Ancho adecuado para la pestaña
+              width: 80,
               child: Center(child: Text('Mes')),
             ),
           ],
