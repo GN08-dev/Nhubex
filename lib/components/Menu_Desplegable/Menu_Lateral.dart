@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/TitulosDeMenu.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
-import 'package:flutter_proyect/router/router.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.dart';
 
 class SideMenu extends StatefulWidget {
   final String companyName;
-  const SideMenu({super.key, required this.companyName});
+  const SideMenu({Key? key, required this.companyName}) : super(key: key);
 
   @override
   State<SideMenu> createState() => _SideMenuState();
@@ -13,6 +13,23 @@ class SideMenu extends StatefulWidget {
 
 class _SideMenuState extends State<SideMenu> {
   Map<String, Color> itemColors = {};
+  bool isReportesExpanded = false;
+
+  String nombreUsuario = '';
+
+  @override
+  void initState() {
+    super.initState();
+    obtenerNombreUsuario();
+  }
+
+  // Función para obtener el nombre del usuario
+  Future<void> obtenerNombreUsuario() async {
+    String nombre = await MenuHelper.obtenerNombreUsuario();
+    setState(() {
+      nombreUsuario = nombre;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,15 +39,15 @@ class _SideMenuState extends State<SideMenu> {
       child: Column(
         children: [
           Container(
-            color: Colors.blue,
+            color: Color.fromRGBO(0, 184, 239, 1),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 25),
+                  const SizedBox(height: 25),
                   InfoCard(
-                    name: 'Desarrollador',
+                    name: nombreUsuario,
                     profession: widget.companyName,
                   ),
                 ],
@@ -43,42 +60,86 @@ class _SideMenuState extends State<SideMenu> {
               child: ListView.builder(
                 itemBuilder: (context, index) {
                   final item = sideMenus[index];
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        itemColors[item['title']] = Colors.blue;
-                      });
-                      _handleButtonTap(item);
-                      _resetColorAfterDelay(item);
-                    },
-                    child: AnimatedContainer(
-                      duration: Duration(milliseconds: 200),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            itemColors[item['title']] ?? Colors.transparent,
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                      child: ListTile(
-                        leading: SizedBox(
-                          height: 34,
-                          width: 34,
-                          child: Icon(
-                            item['icon'],
-                            color: Colors.white,
+                  if (item['title'] == 'Informes') {
+                    return Column(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              isReportesExpanded = !isReportesExpanded;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              color: isReportesExpanded
+                                  ? Colors.black38
+                                  : Colors.transparent,
+                            ),
+                            child: ListTile(
+                              leading: SizedBox(
+                                height: 34,
+                                width: 34,
+                                child: Icon(
+                                  item['icon'],
+                                  color: Colors.white,
+                                ),
+                              ),
+                              title: Text(
+                                item['title'],
+                                style: TextStyle(
+                                  color: isReportesExpanded
+                                      ? Colors.white
+                                      : Colors.white,
+                                  fontWeight: isReportesExpanded
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                        title: Text(
-                          item['title'],
-                          style: const TextStyle(color: Colors.white),
+                      ],
+                    );
+                  } else {
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          itemColors[item['title']] = Colors.blue;
+                        });
+                        MenuHelper.handleButtonTap(context, item);
+                        MenuHelper.resetColorAfterDelay(
+                            context, item, itemColors);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              itemColors[item['title']] ?? Colors.transparent,
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: ListTile(
+                          leading: SizedBox(
+                            height: 34,
+                            width: 34,
+                            child: Icon(
+                              item['icon'],
+                              color: Colors.white,
+                            ),
+                          ),
+                          title: Text(
+                            item['title'],
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
                 itemCount: sideMenus.length,
               ),
@@ -87,33 +148,5 @@ class _SideMenuState extends State<SideMenu> {
         ],
       ),
     );
-  }
-
-  void _handleButtonTap(Map<String, dynamic> item) {
-    print('Tocaste ${item['title']}');
-    if (item['title'] == 'Regresar') {
-      Navigator.pop(context);
-    } else if (item['title'] == 'Cerrar Sesión') {
-      AppRouter.cerrarSesion();
-      _navigateDelayed('/login');
-    } else if (item['title'] == 'Menú') {
-      _navigateDelayed('/menu');
-    } else if (item['title'] == 'Reportes') {
-      _navigateDelayed('/Reportes');
-    }
-  }
-
-  void _resetColorAfterDelay(Map<String, dynamic> item) {
-    Future.delayed(Duration(milliseconds: 200), () {
-      setState(() {
-        itemColors[item['title']] = Colors.transparent;
-      });
-    });
-  }
-
-  void _navigateDelayed(String routeName) {
-    Future.delayed(const Duration(milliseconds: 200), () {
-      Navigator.pushReplacementNamed(context, routeName);
-    });
   }
 }

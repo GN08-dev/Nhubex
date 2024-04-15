@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/src/Menu_Principal.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -79,25 +80,90 @@ class _MyAppFormState extends State<MyAppForm> {
 
         // Verificar si la autenticación fue exitosa
         if (userCredential.user != null) {
-          // Guardar el nombre de la empresa en SharedPreferences
-          await guardarNombreEmpresa(
-              EmpresaImageHelper.getCompanyName(empresa));
+          // Captura el UID del usuario autenticado
+          String uid = userCredential.user!.uid;
+          //String mydocID = 'user.uid';
 
-          // Navegar al menú principal
-          String? nombreEmpresa = await obtenerNombreEmpresa();
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MainMenu(companyName: nombreEmpresa!),
-            ),
-          );
+          // Imprime el UID
+          print('UID del usuario autenticado: $uid');
+
+          // Obtener información del usuario de Firestore
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('usuarios')
+              .doc(userCredential.user!.uid)
+              .get();
+          print('DocumentSnapshot del usuario: ${userDoc.data()}');
+
+          if (userDoc.exists) {
+            // Verificar el rol del usuario
+            String rol = userDoc['rol'];
+            String nombre = userDoc['Nombre'];
+
+            if (rol == 'usuario' || rol == 'Admin') {
+              // Guardar el nombre de la empresa en SharedPreferences
+              await guardarNombreEmpresa(
+                  EmpresaImageHelper.getCompanyName(empresa));
+
+              ///
+              await guardarDatosUsuario(uid, nombre, rol);
+              // Verificar si los datos se han guardado correctamente
+              /*SharedPreferences prefs = await SharedPreferences.getInstance();
+              String? savedUID = prefs.getString('uid');
+              String? savedNombre = prefs.getString('Nombre');
+              String? savedRol = prefs.getString('rol');
+
+              print('Datos del usuario guardados en SharedPreferences:');
+              print('UID: $savedUID');
+              print('Nombre: $savedNombre');
+              print('Rol: $savedRol');*/
+
+              // Navegar al menú principal
+              String? nombreEmpresa = await obtenerNombreEmpresa();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MainMenu(companyName: nombreEmpresa!),
+                ),
+              );
+            } else {
+              mostrarAlerta('Error',
+                  'No tienes los permisos necesarios para iniciar sesión.');
+            }
+          } else {
+            mostrarAlerta('Error', 'Usuario no encontrado');
+          }
         } else {
           mostrarAlerta('Error', 'Credenciales inválidas');
         }
       } on FirebaseAuthException catch (e) {
         mostrarAlerta('Error', e.message ?? 'Ocurrió un error');
+      } catch (e) {
+        mostrarAlerta('Error', 'Ocurrió un error inesperado');
       }
     }
+  }
+
+  // Función para guardar UID, Nombre, y Rol en SharedPreferences
+  Future<void> guardarDatosUsuario(
+      String uid, String nombre, String rol) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('uid', uid);
+    await prefs.setString('Nombre', nombre);
+    await prefs.setString('rol', rol);
+  }
+
+  Future<Map<String, String?>> obtenerDatosUsuario() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String? uid = prefs.getString('uid');
+    String? nombre = prefs.getString('Nombre');
+    String? rol = prefs.getString('rol');
+
+    return {
+      'uid': uid,
+      'Nombre': nombre,
+      'rol': rol,
+    };
   }
 
   Future<void> guardarNombreEmpresa(String nombreEmpresa) async {

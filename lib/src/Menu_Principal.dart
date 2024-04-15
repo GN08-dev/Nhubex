@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
-import 'package:flutter_proyect/components/ContenedorMain/Incio.dart';
-// ignore: unused_import
-import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
+import 'package:flutter_proyect/components/contenedores/Incio.dart';
+import 'package:flutter_proyect/Design/Kit_de_estilos/appbar/appbar.dart';
 
 class MainMenu extends StatefulWidget {
   final String companyName;
@@ -18,19 +17,13 @@ class _MainMenuState extends State<MainMenu> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      drawerScrimColor: Colors.transparent,
       drawer: SideMenu(
         companyName: widget.companyName,
       ),
-      appBar: AppBar(
-        backgroundColor: Colors.blue[300],
-        title: const Text(
-          'Inicio',
-          style: TextStyle(color: Colors.black),
-        ),
-      ),
+      appBar: CustomAppBar(titleText: 'Menu Principal'),
+
       // Cuerpo
+      backgroundColor: Colors.white,
       body: Center(
         child: Row(
           children: [
@@ -38,9 +31,11 @@ class _MainMenuState extends State<MainMenu> {
               child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black),
+                    border: Border.all(color: Colors.white),
                   ),
-                  child: const InicioInfo()),
+                  child: WelcomeInfo(
+                    companyName: widget.companyName,
+                  )),
             )
           ],
         ),

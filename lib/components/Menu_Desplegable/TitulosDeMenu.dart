@@ -4,8 +4,8 @@ class MenuDataProvider {
   static final List<Map<String, dynamic>> sideMenus = [
     {'title': 'Menú', 'icon': Icons.home},
     {'title': 'Reportes', 'icon': Icons.pending_actions_rounded},
-    {'title': 'Búsqueda', 'icon': Icons.search},
-    {'title': 'Configuración', 'icon': Icons.settings},
+    {'title': 'Prenomina', 'icon': Icons.search},
+    {'title': 'Registro', 'icon': Icons.people},
     {'title': 'Cerrar Sesión', 'icon': Icons.logout},
     {'title': 'Regresar', 'icon': Icons.arrow_back},
   ];
