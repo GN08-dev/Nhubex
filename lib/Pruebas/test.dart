@@ -191,13 +191,22 @@ class _TestPrueba2State extends State<TestPrueba2> {
 
   // Método para filtrar los datos por sucursal seleccionada
   List<dynamic> filtrarDatosPorSucursal(String sucursal) {
-    return datosTemporales.where((registro) {
+    List<dynamic> datosFiltrados = datosTemporales.where((registro) {
       if (sucursal == 'Sucursal') {
         return true;
       } else {
         return sucursal == registro['Sucursal'].toString();
       }
     }).toList();
+
+    // Ordenar datos por IDUbicacion de menor a mayor
+    datosFiltrados.sort((a, b) {
+      final idA = int.tryParse(a['IDUbicacion'].toString()) ?? 0;
+      final idB = int.tryParse(b['IDUbicacion'].toString()) ?? 0;
+      return idA.compareTo(idB);
+    });
+
+    return datosFiltrados;
   }
 
 // Método para convertir los datos a un formato de gráficos de barras
@@ -223,7 +232,7 @@ class _TestPrueba2State extends State<TestPrueba2> {
       maxSales = max(maxSales, ventasPorIDUbicacion[idUbicacion]!);
     }
 
-    maxSales += maxSales * 0.2;
+    maxSales += maxSales * 0.5;
 
     // Ordenar los IDs de ubicación por ventas
     sortedSucursales = ventasPorIDUbicacion.keys.toList()
@@ -395,8 +404,7 @@ class _TestPrueba2State extends State<TestPrueba2> {
 
                     const SizedBox(height: 20),
                     // Llamar a SalesBarChart con xTitles
-                    SizedBox(
-                      height: 260,
+                    Expanded(
                       child: SalesBarChart(
                         listaBarChartData,
                         sortedSucursales,

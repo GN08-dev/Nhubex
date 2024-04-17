@@ -10,7 +10,7 @@ class SalesBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Utiliza TextPainter para calcular el ancho máximo de las etiquetas del eje Y
+    // Calcular el ancho máximo de las etiquetas del eje Y
     double maxYLabelWidth = 0.0;
     List<double> yValues = [];
     for (var group in seriesList) {
@@ -74,11 +74,16 @@ class SalesBarChart extends StatelessWidget {
               getTitlesWidget: (value, meta) {
                 // Función para formatear valores en miles
                 String formatValue(double value) {
-                  if (value >= 1000) {
-                    // Convierte a miles y redondea a una decimal
-                    return '${(value / 1000).toStringAsFixed(1)}K';
+                  // Redondear a múltiplos de 250
+                  double scale = 250;
+                  double roundedValue = (value / scale).round() * scale;
+
+                  // Mostrar el valor redondeado en miles (`K`) si es mayor o igual a 1000
+                  if (roundedValue >= 1000) {
+                    return '${(roundedValue / 1000).toStringAsFixed(0)}K';
                   }
-                  return value.toStringAsFixed(1);
+                  // Mostrar el valor redondeado como número cerrado
+                  return roundedValue.toStringAsFixed(0);
                 }
 
                 return Padding(

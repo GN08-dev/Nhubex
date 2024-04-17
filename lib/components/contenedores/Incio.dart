@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/botones/custom_button.dart';
 import 'package:flutter_proyect/Pruebas/test.dart';
 import 'package:flutter_proyect/models/Reportes/Reportes.dart';
-import 'package:flutter_proyect/models/Ventas/Ventas.dart';
 import 'package:flutter_proyect/models/prenomina/prenomina.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
