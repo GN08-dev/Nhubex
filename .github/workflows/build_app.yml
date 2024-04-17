@@ -1,0 +1,68 @@
+name: Build iOS and Android
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_ios:
+    name: Build iOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Build iOS release
+        run: flutter build ios --release
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/ios/iphoneos/Runner.app \
+            -exportOptionsPlist ios/Runner/ExportOptions.plist \
+            -exportPath artifacts/ \
+            -allowProvisioningUpdates \
+            -exportMethod app-store
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v2
+        with:
+          name: ipa
+          path: artifacts/
+
+      - name: Operación con token secreto
+        run: |
+          curl -H "Authorization: token ${{ secrets.TOKEN }}" https://api.github.com/user
+
+  build_android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Build Android release
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v2
+        with:
+          name: apk
+          path: build/app/outputs/flutter-apk/
