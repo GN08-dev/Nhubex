@@ -11,10 +11,10 @@ import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
 
 class TestPrueba2 extends StatefulWidget {
-  const TestPrueba2({Key? key}) : super(key: key);
+  const TestPrueba2({super.key});
 
   @override
-  _TestPrueba2State createState() => _TestPrueba2State();
+  State<TestPrueba2> createState() => _TestPrueba2State();
 }
 
 class _TestPrueba2State extends State<TestPrueba2> {

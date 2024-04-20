@@ -19,9 +19,30 @@ class ButtonDataProvider {
 
   static final List<Map<String, dynamic>> salesButtons = [
     {'title': 'Ventas del diario', 'info': 'sin info'},
-    {'title': 'Ventas por punto de venta', 'info': 'sin info'},
-    {'title': 'Ventas por referencia', 'info': 'sin info'},
-    {'title': 'Ventas por vendedor', 'info': 'sin info'},
+    {
+      'title': 'Venta por Ticket (Consolidado)',
+      'info': 'sin info'
+    }, //rep_venta_ticket_consolidado
+    {
+      'title': 'Venta por Forma de Pago (Consolidada)',
+      'info': 'sin info'
+    }, //rep_venta_consolidada_forma_pago
+    {
+      'title': 'Venta por Ticket (Detalle)',
+      'info': 'sin info'
+    }, //rep_venta_ticket_detalle
+    {
+      'title': 'Venta por Sucursal Detalle',
+      'info': 'sin info'
+    }, //rep_venta_sucursal_detalle
+    {
+      'title': 'Venta por Forma de Pago (Detalle)',
+      'info': 'sin info'
+    }, //rep_venta_detalle_forma_pago
+    {
+      'title': 'Venta Consolidada por Rango de Fechas',
+      'info': 'sin info'
+    }, //rep_venta_consolidada
   ];
   static List<Map<String, dynamic>> getSalesButtons() {
     return salesButtons;
@@ -30,7 +51,6 @@ class ButtonDataProvider {
   static final List<Map<String, dynamic>> otherButtons = [
     {'title': 'Consulta de producto', 'info': 'sin info'},
     {'title': 'Consulta de productos (cámara)', 'info': 'sin info'},
-    // Agrega más opciones según sea necesario
   ];
   static List<Map<String, dynamic>> getOtherButtons() {
     return otherButtons;

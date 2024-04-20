@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/botones/custom_button.dart';
-import 'package:flutter_proyect/Design/Kit_de_estilos/botones/TitulosBotones.dart';
+import 'package:flutter_proyect/Design/Kit_de_estilos/botones/TitulosBotones_Reportes.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/botones/navegador.dart';
 
 class Reportesct extends StatefulWidget {
