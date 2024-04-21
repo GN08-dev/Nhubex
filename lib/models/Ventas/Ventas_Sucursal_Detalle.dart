@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -100,86 +102,141 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
         startIndex, endIndex < datosC1.length ? endIndex : datosC1.length);
   }
 
+  List<BarChartGroupData> convertirDatosAVentasBarChart(List<dynamic> datos) {
+    Map<String, double> ventasPorIDUbicacion = {};
+    double totalVentaNeta = 0;
+
+    for (var registro in datos) {
+      String idUbicacion = registro['UBICACION'].toString();
+      double valor = double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
+      ventasPorIDUbicacion[idUbicacion] =
+          (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
+      totalVentaNeta += valor;
+    }
+
+    // Redondear totalVentaNeta hacia arriba a la centena más cercana
+    double maxSales = (totalVentaNeta.ceilToDouble() / 100000).ceil() * 100000;
+
+    List<String> sortedSucursales = ventasPorIDUbicacion.keys.toList()
+      ..sort((a, b) =>
+          ventasPorIDUbicacion[b]!.compareTo(ventasPorIDUbicacion[a]!));
+    sortedSucursales = sortedSucursales.take(5).toList();
+
+    List<BarChartGroupData> listaBarChartData =
+        List.generate(sortedSucursales.length, (index) {
+      final idUbicacion = sortedSucursales[index];
+      final ventas = ventasPorIDUbicacion[idUbicacion]!;
+
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: ventas,
+            color: Colors.blue,
+            width: 35,
+            borderRadius: BorderRadius.circular(4),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              toY: maxSales,
+              color: Colors.grey[300],
+            ),
+          ),
+        ],
+      );
+    });
+
+    return listaBarChartData;
+  }
+
+  ////CALCULAR FORMA DE PAGO
+
   @override
   Widget build(BuildContext context) {
-    final paginasTotales = (datosC1.length / itemsPorPagina).ceil();
-
     return Scaffold(
+      endDrawer: Drawer(),
       appBar: AppBar(
-        title: const Text('Ventas Sucursal Detalle'),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Ventas por Sucursal',
+              style: TextStyle(fontSize: 18),
+            ),
+            Text(
+              'Detalle',
+              style: TextStyle(fontSize: 16),
+            )
+          ],
+        ),
       ),
       body: loading
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: CustomDataTable(
-                        columns: const [
-                          DataColumn(label: Text('Ubicación')),
-                          DataColumn(label: Text('Sucursal')),
-                          DataColumn(label: Text('Fecha')),
-                          DataColumn(label: Text('Venta')),
-                          DataColumn(label: Text('Devoluciones')),
-                          DataColumn(label: Text('Ventas Menos Dev')),
-                          DataColumn(label: Text('Venta Neta')),
-                          DataColumn(label: Text('Impuestos')),
-                          DataColumn(label: Text('Tickets')),
-                          DataColumn(label: Text('Piezas')),
-                        ],
-                        rows: getDatosPagina(paginaActual)
-                            .map((datos) => DataRow(
-                                  cells: [
-                                    DataCell(Text(datos['UBICACION'] ?? '')),
-                                    DataCell(Text(datos['Nombre'] ?? '')),
-                                    DataCell(Text(datos['fecha'] ?? '')),
-                                    DataCell(Text(datos['venta'] ?? '')),
-                                    DataCell(Text(datos['devoluciones'] ?? '')),
-                                    DataCell(
-                                        Text(datos['ventasmenosdev'] ?? '')),
-                                    DataCell(Text(datos['venta_neta'] ?? '')),
-                                    DataCell(Text(datos['impuestos'] ?? '')),
-                                    DataCell(Text(datos['tickets'] ?? '')),
-                                    DataCell(Text(datos['piezas'] ?? '')),
-                                  ],
-                                ))
-                            .toList(),
-                        footerRows: [],
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+          : Column(
+              children: [
+                const SizedBox(height: 20),
+                // Gráfica de ventas por forma de pago
+                SizedBox(
+                  height: 300,
+                  child: SalesBarChart(
+                    convertirDatosAVentasBarChart(datosC1),
+                    datosC1
+                        .map((dato) => dato['UBICACION'].toString())
+                        .toList(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (paginaActual > 1)
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                paginaActual--;
-                              });
-                            },
-                            icon: Icon(Icons.arrow_back),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: CustomDataTable(
+                            columns: const [
+                              DataColumn(label: Text('Ubicación')),
+                              DataColumn(label: Text('Sucursal')),
+                              DataColumn(label: Text('Fecha')),
+                              DataColumn(label: Text('Venta')),
+                              DataColumn(label: Text('Devoluciones')),
+                              DataColumn(label: Text('Ventas Menos Dev')),
+                              DataColumn(label: Text('Venta Neta')),
+                              DataColumn(label: Text('Impuestos')),
+                              DataColumn(label: Text('Tickets')),
+                              DataColumn(label: Text('Piezas')),
+                            ],
+                            rows: getDatosPagina(paginaActual)
+                                .map((datos) => DataRow(
+                                      cells: [
+                                        DataCell(
+                                            Text(datos['UBICACION'] ?? '')),
+                                        DataCell(Text(datos['Nombre'] ?? '')),
+                                        DataCell(Text(datos['fecha'] ?? '')),
+                                        DataCell(Text(datos['venta'] ?? '')),
+                                        DataCell(
+                                            Text(datos['devoluciones'] ?? '')),
+                                        DataCell(Text(
+                                            datos['ventasmenosdev'] ?? '')),
+                                        DataCell(
+                                            Text(datos['venta_neta'] ?? '')),
+                                        DataCell(
+                                            Text(datos['impuestos'] ?? '')),
+                                        DataCell(Text(datos['tickets'] ?? '')),
+                                        DataCell(Text(datos['piezas'] ?? '')),
+                                      ],
+                                    ))
+                                .toList(),
+                            footerRows: [],
                           ),
-                        Text('Página $paginaActual de $paginasTotales'),
-                        if (paginaActual < paginasTotales)
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                paginaActual++;
-                              });
-                            },
-                            icon: Icon(Icons.arrow_forward),
-                          ),
+                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
     );
   }

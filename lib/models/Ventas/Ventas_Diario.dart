@@ -232,7 +232,11 @@ class _VentasState extends State<Ventas> {
       maxSales = max(maxSales, ventasPorIDUbicacion[idUbicacion]!);
     }
 
-    maxSales += maxSales * 0.5;
+    // Redondear maxSales hacia arriba al siguiente múltiplo de 100,000
+    maxSales = ((maxSales.ceilToDouble() / 100000).ceil()) * 100000;
+
+    // Ajustar el valor de maxSales al 50% adicional
+    //maxSales += maxSales * 0.25;
 
     // Ordenar los IDs de ubicación por ventas
     sortedSucursales = ventasPorIDUbicacion.keys.toList()
@@ -367,8 +371,19 @@ class _VentasState extends State<Ventas> {
         ),
       ),
       appBar: AppBar(
-        title: const Text('Ventas'),
-      ),
+          title: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ventas del',
+            style: TextStyle(fontSize: 18),
+          ),
+          Text(
+            'Diario',
+            style: TextStyle(fontSize: 16),
+          ),
+        ],
+      )),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : totalNeto == 0.0

@@ -4,7 +4,7 @@ import 'package:flutter_proyect/models/Ventas/Venta_Consolidada_Rango_Fechas.dar
 import 'package:flutter_proyect/models/Ventas/Venta_Forma_Pago_Consolidada.dart';
 import 'package:flutter_proyect/models/Ventas/Venta_Forma_Pago_Detalle.dart';
 import 'package:flutter_proyect/models/Ventas/Venta_Ticket_Consolidado.dart';
-import 'package:flutter_proyect/models/Ventas/Ventas.dart';
+import 'package:flutter_proyect/models/Ventas/Ventas_Diario.dart';
 import 'package:flutter_proyect/models/Ventas/VentaporTicketDetalle.dart';
 import 'package:flutter_proyect/models/Ventas/Ventas_Sucursal_Detalle.dart';
 

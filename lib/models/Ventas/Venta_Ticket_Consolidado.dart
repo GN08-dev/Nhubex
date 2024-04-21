@@ -1,11 +1,14 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dio/dio.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart'; // Importamos la clase SalesBarChart
 
 class VentaTicketConsolidado extends StatefulWidget {
-  const VentaTicketConsolidado({super.key});
+  const VentaTicketConsolidado({Key? key}) : super(key: key);
 
   @override
   State<VentaTicketConsolidado> createState() => _VentaTicketConsolidadoState();
@@ -16,8 +19,6 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
   String nombre = '';
   bool loading = false;
   List<Map<String, dynamic>> datosC1 = [];
-  int itemsPorPagina = 5;
-  int paginaActual = 1;
 
   @override
   void initState() {
@@ -25,7 +26,6 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
     obtenerNombreEmpresa();
     obtenerNombreUsuario().then((_) {
       if (nombre.isNotEmpty) {
-        // Llama a la función obtenerDatos en segundo plano
         obtenerDatos().then((data) {
           setState(() {
             datosC1 = data;
@@ -67,7 +67,6 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
         final Map<String, dynamic> data = json.decode(response.data);
         final List<dynamic> c1Data = data['RESPUESTA']['C1'];
 
-        // Procesa y almacena los datos recibidos en `datosC1`
         List<Map<String, dynamic>> datos = [];
         for (var item in c1Data) {
           datos.add(Map<String, dynamic>.from(item));
@@ -93,32 +92,95 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
     );
   }
 
-  List<Map<String, dynamic>> getDatosPagina(int pagina) {
-    final startIndex = (pagina - 1) * itemsPorPagina;
-    final endIndex = startIndex + itemsPorPagina;
-    return datosC1.sublist(
-        startIndex, endIndex < datosC1.length ? endIndex : datosC1.length);
+  List<BarChartGroupData> convertirDatosAVentasBarChart(List<dynamic> datos) {
+    Map<String, double> ventasPorIDUbicacion = {};
+    double totalVentaNeta = 0;
+
+    for (var registro in datos) {
+      String idUbicacion = registro['ubicacion'].toString();
+      double valor = double.tryParse(registro['Venta_Neta'] ?? '0.0') ?? 0.0;
+      ventasPorIDUbicacion[idUbicacion] =
+          (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
+      totalVentaNeta += valor;
+    }
+
+    // Redondear totalVentaNeta hacia arriba a la centena más cercana
+    double maxSales = (totalVentaNeta.ceilToDouble() / 100000).ceil() * 100000;
+
+    List<String> sortedSucursales = ventasPorIDUbicacion.keys.toList()
+      ..sort((a, b) =>
+          ventasPorIDUbicacion[b]!.compareTo(ventasPorIDUbicacion[a]!));
+
+    List<BarChartGroupData> listaBarChartData =
+        List.generate(sortedSucursales.length, (index) {
+      final idUbicacion = sortedSucursales[index];
+      final ventas = ventasPorIDUbicacion[idUbicacion]!;
+
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: ventas,
+            color: Colors.blue,
+            width: 35,
+            borderRadius: BorderRadius.circular(4),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              toY: maxSales,
+              color: Colors.grey[300],
+            ),
+          ),
+        ],
+      );
+    });
+
+    return listaBarChartData;
   }
 
   @override
   Widget build(BuildContext context) {
-    final paginasTotales = (datosC1.length / itemsPorPagina).ceil();
-
     return Scaffold(
+      endDrawer: Drawer(),
       appBar: AppBar(
-        title: const Text('Ventas Ticket Consolidado'),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Venta por ticket',
+              style: TextStyle(fontSize: 18), // Ajusta el tamaño del subtítulo
+            ),
+            Text(
+              '(consolidado)',
+              style: TextStyle(fontSize: 16), // Ajusta el tamaño del subtítulo
+            )
+          ],
+        ),
       ),
       body: loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SingleChildScrollView(
+          ? Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                const SizedBox(
+                  height: 20,
+                ),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 300,
+                    child: SalesBarChart(
+                      convertirDatosAVentasBarChart(datosC1),
+                      datosC1
+                          .map((dato) => dato['ubicacion'].toString())
+                          .toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  flex: 3,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: CustomDataTable(
                         columns: const [
@@ -127,58 +189,26 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
                           DataColumn(label: Text('Ticket')),
                           DataColumn(label: Text('Venta')),
                           DataColumn(label: Text('Venta Neta')),
-                          DataColumn(label: Text('Impuestos')),
-                          DataColumn(label: Text('Factura')),
-                          DataColumn(label: Text('Piezas')),
-                          DataColumn(label: Text('Costo')),
-                          DataColumn(label: Text('Vendedor')),
                         ],
-                        rows: getDatosPagina(paginaActual)
-                            .map((datos) => DataRow(
-                                  cells: [
-                                    DataCell(Text(datos['ubicacion'] ?? '')),
-                                    DataCell(Text(datos['nombre'] ?? '')),
-                                    DataCell(Text(datos['Ticket'] ?? '')),
-                                    DataCell(Text(datos['Venta'] ?? '')),
-                                    DataCell(Text(datos['Venta_Neta'] ?? '')),
-                                    DataCell(Text(datos['Impuestos'] ?? '')),
-                                    DataCell(Text(datos['Factura'] ?? '')),
-                                    DataCell(Text(datos['Piezas'] ?? '')),
-                                    DataCell(Text(datos['costo'] ?? '')),
-                                    DataCell(Text(datos['Vendedor'] ?? '')),
-                                  ],
-                                ))
+                        rows: datosC1
+                            .map(
+                              (dato) => DataRow(
+                                cells: [
+                                  DataCell(Text(dato['ubicacion'].toString())),
+                                  DataCell(Text(dato['nombre'].toString())),
+                                  DataCell(Text(dato['Ticket'].toString())),
+                                  DataCell(Text(dato['Venta'].toString())),
+                                  DataCell(Text(dato['Venta_Neta'].toString())),
+                                ],
+                              ),
+                            )
                             .toList(),
                         footerRows: [],
                       ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (paginaActual > 1)
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                paginaActual--;
-                              });
-                            },
-                            icon: Icon(Icons.arrow_back),
-                          ),
-                        Text('Página $paginaActual de $paginasTotales'),
-                        if (paginaActual < paginasTotales)
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                paginaActual++;
-                              });
-                            },
-                            icon: Icon(Icons.arrow_forward),
-                          ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
     );
   }
