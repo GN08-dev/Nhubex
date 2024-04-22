@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
 
 class VentasSucursalDetalle extends StatefulWidget {
-  const VentasSucursalDetalle({super.key});
+  const VentasSucursalDetalle({Key? key});
 
   @override
   State<VentasSucursalDetalle> createState() => _VentasSucursalDetalleState();
@@ -20,6 +22,19 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
   List<Map<String, dynamic>> datosC1 = [];
   int itemsPorPagina = 5;
   int paginaActual = 1;
+  //filtros
+  double sumaVentaNetaTotal = 0.0;
+  Map<String, double> ventaNetaPorSucursal = {};
+  String selectedSucursal = 'Todas las sucursales';
+  List<String> sucursalesOptions = ['Todas las sucursales'];
+  List<Map<String, dynamic>> filtrarDatosPorSucursalTabla(
+      List<Map<String, dynamic>> datos, String sucursal) {
+    if (sucursal == 'Todas las sucursales') {
+      return datos;
+    } else {
+      return datos.where((dato) => dato['nombre'] == sucursal).toList();
+    }
+  }
 
   @override
   void initState() {
@@ -27,10 +42,12 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
     obtenerNombreEmpresa();
     obtenerNombreUsuario().then((_) {
       if (nombre.isNotEmpty) {
-        // Llama a la función obtenerDatos en segundo plano
         obtenerDatos().then((data) {
           setState(() {
             datosC1 = data;
+            calcularEstadisticas();
+            calcularVentaNetaPorSucursal();
+            actualizarListaSucursales();
           });
         });
       } else {
@@ -72,8 +89,46 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
         // Procesa y almacena los datos recibidos en `datosC1`
         List<Map<String, dynamic>> datos = [];
         for (var item in c1Data) {
-          datos.add(Map<String, dynamic>.from(item));
+          Map<String, dynamic> itemLowerCase = {};
+          item.forEach((key, value) {
+            itemLowerCase[key.toLowerCase()] = value;
+          });
+          datos.add(itemLowerCase);
         }
+// Calcular los totales
+        double totalVenta = 0;
+        double totalDevoluciones = 0;
+        double totalVentasMenosDev = 0;
+        double totalVentaNeta = 0;
+        double totalImpuestos = 0;
+        double totalTickets = 0;
+        double totalPiezas = 0;
+
+        for (var registro in datos) {
+          totalVenta += double.tryParse(registro['venta'] ?? '0.0') ?? 0.0;
+          totalDevoluciones +=
+              double.tryParse(registro['devoluciones'] ?? '0.0') ?? 0.0;
+          totalVentaNeta +=
+              double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
+          totalVentasMenosDev +=
+              double.tryParse(registro['ventasmenosdev'] ?? '0.0') ?? 0.0;
+          totalImpuestos +=
+              double.tryParse(registro['impuestos'] ?? '0.0') ?? 0.0;
+          totalTickets += double.tryParse(registro['tickets'] ?? '0.0') ?? 0.0;
+          totalPiezas += double.tryParse(registro['piezas'] ?? '0.0') ?? 0.0;
+        }
+
+// Actualizar el estado de los totales
+        setState(() {
+          totalVentaTotal = totalVenta;
+          totalDevolucionesTotal = totalDevoluciones;
+          totalVentasMenosDevTotal = totalVentasMenosDev;
+          totalVentaNetaTotal = totalVentaNeta;
+          totalImpuestosTotal = totalImpuestos;
+          totalTicketsTotal = totalTickets;
+          totalPiezasTotal = totalPiezas;
+        });
+
         return datos;
       } else {
         mostrarError(
@@ -96,64 +151,189 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
   }
 
   List<Map<String, dynamic>> getDatosPagina(int pagina) {
+    final datosFiltrados =
+        filtrarDatosPorSucursalTabla(datosC1, selectedSucursal);
     final startIndex = (pagina - 1) * itemsPorPagina;
     final endIndex = startIndex + itemsPorPagina;
-    return datosC1.sublist(
-        startIndex, endIndex < datosC1.length ? endIndex : datosC1.length);
+    final datosPagina = datosFiltrados.sublist(startIndex,
+        endIndex < datosFiltrados.length ? endIndex : datosFiltrados.length);
+    return datosPagina;
+  }
+
+  void calcularEstadisticas() {
+    sumaVentaNetaTotal = datosC1.fold<double>(0, (previousValue, element) {
+      return previousValue +
+          (double.tryParse(element['Venta_Neta'] ?? '0.0') ?? 0.0);
+    });
+  }
+
+  void calcularVentaNetaPorSucursal() {
+    for (var item in datosC1) {
+      final nombreSucursal = item['nombre'] as String;
+      final ventaNeta = double.tryParse(item['Venta_Neta'] ?? '0.0') ?? 0.0;
+      ventaNetaPorSucursal[nombreSucursal] =
+          (ventaNetaPorSucursal[nombreSucursal] ?? 0) + ventaNeta;
+    }
   }
 
   List<BarChartGroupData> convertirDatosAVentasBarChart(List<dynamic> datos) {
     Map<String, double> ventasPorIDUbicacion = {};
-    double totalVentaNeta = 0;
 
     for (var registro in datos) {
-      String idUbicacion = registro['UBICACION'].toString();
+      String idUbicacion = registro['ubicacion'].toString();
       double valor = double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
       ventasPorIDUbicacion[idUbicacion] =
           (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
-      totalVentaNeta += valor;
     }
 
-    // Redondear totalVentaNeta hacia arriba a la centena más cercana
-    double maxSales = (totalVentaNeta.ceilToDouble() / 100000).ceil() * 100000;
-
+    // Ordenamos las ubicaciones por ventas de mayor a menor
     List<String> sortedSucursales = ventasPorIDUbicacion.keys.toList()
       ..sort((a, b) =>
           ventasPorIDUbicacion[b]!.compareTo(ventasPorIDUbicacion[a]!));
+
+    // Tomamos las primeras 5 ubicaciones con mayores ventas
     sortedSucursales = sortedSucursales.take(5).toList();
 
-    List<BarChartGroupData> listaBarChartData =
-        List.generate(sortedSucursales.length, (index) {
-      final idUbicacion = sortedSucursales[index];
-      final ventas = ventasPorIDUbicacion[idUbicacion]!;
+    List<BarChartGroupData> listaBarChartData = List.generate(
+      sortedSucursales.length,
+      (index) {
+        final idUbicacion = sortedSucursales[index];
+        final ventas = ventasPorIDUbicacion[idUbicacion]!;
 
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: ventas,
-            color: Colors.blue,
-            width: 35,
-            borderRadius: BorderRadius.circular(4),
-            backDrawRodData: BackgroundBarChartRodData(
-              show: true,
-              toY: maxSales,
-              color: Colors.grey[300],
+        // Si es la última ubicación, usamos el valor de ventas como máximo para el eje y
+        double? maxY = index == sortedSucursales.length - 1 ? ventas : null;
+
+        return BarChartGroupData(
+          x: index,
+          barRods: [
+            BarChartRodData(
+              toY: ventas, // Usamos el valor de ventas directamente
+              color: Colors.blue,
+              width: 35,
+              borderRadius: BorderRadius.circular(4),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: ventas, // Usamos el valor máximo solo para la última barra
+                color: Colors.grey[300],
+              ),
             ),
-          ),
-        ],
-      );
-    });
+          ],
+        );
+      },
+    );
 
     return listaBarChartData;
   }
 
+  List<String> obtenerUbicacionesUnicas(List<Map<String, dynamic>> datos) {
+    Set<String> ubicaciones = Set();
+    for (var dato in datos) {
+      if (dato['ubicacion'] != null) {
+        ubicaciones.add(dato['ubicacion'].toString());
+      }
+    }
+    return ubicaciones.toList();
+  }
+
+  void actualizarListaSucursales() {
+    Set<String> sucursales = Set();
+    for (var dato in datosC1) {
+      if (dato['nombre'] != null) {
+        sucursales.add(dato['nombre'].toString());
+      }
+    }
+    setState(() {
+      sucursalesOptions.clear();
+      sucursalesOptions.add('Todas las sucursales');
+      sucursalesOptions.addAll(sucursales);
+      selectedSucursal = 'Todas las sucursales';
+    });
+  }
   ////CALCULAR FORMA DE PAGO
+
+  // Totales
+  double totalVentaTotal = 0;
+  double totalDevolucionesTotal = 0;
+  double totalVentaNetaTotal = 0;
+  double totalVentasMenosDevTotal = 0;
+  double totalImpuestosTotal = 0;
+  double totalTicketsTotal = 0;
+  double totalPiezasTotal = 0;
+
+  double calcularSumaVentaNetaTotal() {
+    final datosFiltrados =
+        filtrarDatosPorSucursalTabla(datosC1, selectedSucursal);
+    return datosFiltrados.fold<double>(0, (previousValue, element) {
+      return previousValue +
+          (double.tryParse(element['venta_neta'] ?? '0.0') ?? 0.0);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    String currentMonth = DateFormat('MMMM', 'es_MX').format(DateTime.now());
+
     return Scaffold(
-      endDrawer: Drawer(),
+      endDrawer: Drawer(
+        child: Column(
+          children: [
+            // Parte superior del Drawer
+            Container(
+              color: const Color.fromRGBO(0, 184, 239, 1),
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 25),
+                  InfoCard(
+                    name: nombre,
+                    profession: empresa,
+                  ),
+                ],
+              ),
+            ),
+
+            // Parte inferior del Drawer
+            Expanded(
+              child: Container(
+                color: const Color.fromRGBO(46, 48, 53, 1),
+                child: ListView(
+                  children: [
+                    // ExpansionTile para seleccionar la sucursal
+                    ExpansionTile(
+                      title: const Text(
+                        'Seleccionar Sucursal',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      children: sucursalesOptions.map((sucursal) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              selectedSucursal = sucursal;
+                              // calcularTotalventas(); // Reemplazar con el método correcto si es necesario
+                              // Cerrar el ExpansionTile
+                            });
+                          },
+                          child: Container(
+                            color: Colors.black26,
+                            child: ListTile(
+                              title: Text(
+                                sucursal,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,6 +355,26 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
             )
           : Column(
               children: [
+                Text(
+                  currentMonth.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54,
+                  ),
+                ),
+                Text(
+                  ' \$${NumberFormat(
+                    "#,##0.00",
+                  ).format(calcularSumaVentaNetaTotal())}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 // Gráfica de ventas por forma de pago
                 SizedBox(
@@ -182,7 +382,7 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
                   child: SalesBarChart(
                     convertirDatosAVentasBarChart(datosC1),
                     datosC1
-                        .map((dato) => dato['UBICACION'].toString())
+                        .map((dato) => dato['ubicacion'].toString())
                         .toList(),
                   ),
                 ),
@@ -212,8 +412,8 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
                                 .map((datos) => DataRow(
                                       cells: [
                                         DataCell(
-                                            Text(datos['UBICACION'] ?? '')),
-                                        DataCell(Text(datos['Nombre'] ?? '')),
+                                            Text(datos['ubicacion'] ?? '')),
+                                        DataCell(Text(datos['nombre'] ?? '')),
                                         DataCell(Text(datos['fecha'] ?? '')),
                                         DataCell(Text(datos['venta'] ?? '')),
                                         DataCell(
@@ -229,7 +429,50 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
                                       ],
                                     ))
                                 .toList(),
-                            footerRows: [],
+                            footerRows: [
+                              DataRow(cells: [
+                                const DataCell(Text('')),
+                                const DataCell(Text('')),
+                                const DataCell(Text('Total',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                                DataCell(Text(
+                                    totalVentaTotal.toStringAsFixed(2),
+                                    style: const TextStyle(
+                                        fontWeight:
+                                            FontWeight.bold))), // Total Venta
+                                DataCell(Text(
+                                    '${totalDevolucionesTotal.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight
+                                            .bold))), // Total Devoluciones
+                                DataCell(Text(
+                                    '${totalVentasMenosDevTotal.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight
+                                            .bold))), // Total Ventas Menos Dev
+                                DataCell(Text(
+                                    '${totalVentaNetaTotal.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight
+                                            .bold))), // Total Venta Neta
+                                DataCell(Text(
+                                    '${totalImpuestosTotal.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight
+                                            .bold))), // Total Impuestos
+                                DataCell(Text(
+                                    '${totalTicketsTotal.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                        fontWeight:
+                                            FontWeight.bold))), // Total Tickets
+                                DataCell(Text(
+                                    '${totalPiezasTotal.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                        fontWeight:
+                                            FontWeight.bold))), // Total Piezas
+                              ]),
+                            ],
                           ),
                         ),
                       ],

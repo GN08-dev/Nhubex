@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -17,8 +19,14 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
   String empresa = '';
   String nombre = '';
   bool loading = false;
+  double sumaVentaNetaTotal = 0.0;
   List<Map<String, dynamic>> datosC1 = [];
   Map<String, dynamic> totalPorFormaPago = {};
+  //filtro
+  Map<String, String> sucursalesMap = {};
+  String selectedSucursal =
+      'Todas las sucursales'; // Inicializamos con "Todas las sucursales"
+  List<String> sucursalesOptions = ['Todas las sucursales'];
 
   @override
   void initState() {
@@ -30,6 +38,7 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
           setState(() {
             datosC1 = data;
             calcularTotalesPorFormaPago();
+            calcularEstadisticas(); // Agregar esta línea
           });
         });
       } else {
@@ -72,6 +81,22 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
         for (var item in c1Data) {
           datos.add(Map<String, dynamic>.from(item));
         }
+        // Obtener nombres de sucursales y sus ubicaciones
+        for (var dato in datosC1) {
+          String nombreSucursal = dato['nombre'] ?? '';
+          String ubicacion = dato['ubicacion'] ?? '';
+          sucursalesMap[nombreSucursal] = ubicacion;
+        }
+        // Actualizamos las opciones del DropdownButton
+        setState(() {
+          sucursalesOptions.addAll(sucursalesMap.keys.toList());
+          // Verificamos si hay algún valor en la lista de opciones
+          if (sucursalesOptions.isNotEmpty) {
+            // Establecemos el primer valor de la lista como seleccionado por defecto
+            selectedSucursal = sucursalesOptions.first;
+          }
+        });
+
         return datos;
       } else {
         mostrarError(
@@ -112,55 +137,147 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
     );
   }
 
-  List<BarChartGroupData> convertirDatosAVentasBarChart(List<dynamic> datos) {
+  List<BarChartGroupData> convertirDatosAVentasBarChart(
+      List<dynamic> datos, String sucursalSeleccionada) {
     Map<String, double> ventasPorIDUbicacion = {};
-    double totalVentaNeta = 0;
 
-    for (var registro in datos) {
-      String idUbicacion = registro['ubicacion'].toString();
-      double valor = double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
-      ventasPorIDUbicacion[idUbicacion] =
-          (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
-      totalVentaNeta += valor;
+    // Filtra los datos por la sucursal seleccionada, si no es "Todas las sucursales"
+    if (sucursalSeleccionada != 'Todas las sucursales') {
+      final datosFiltrados = datos
+          .where((dato) => dato['nombre'] == sucursalSeleccionada)
+          .toList();
+
+      for (var registro in datosFiltrados) {
+        String idUbicacion = registro['ubicacion'].toString();
+        double valor = double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
+        ventasPorIDUbicacion[idUbicacion] =
+            (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
+      }
+    } else {
+      // Si se selecciona "Todas las sucursales", mostramos todas las ubicaciones
+      for (var registro in datos) {
+        String idUbicacion = registro['ubicacion'].toString();
+        double valor = double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
+        ventasPorIDUbicacion[idUbicacion] =
+            (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
+      }
     }
 
     // Redondear totalVentaNeta hacia arriba a la centena más cercana
-    double maxSales = (totalVentaNeta.ceilToDouble() / 100000).ceil() * 100000;
+    double maxSales = (ventasPorIDUbicacion.values
+                    .fold<double>(0, (previous, current) => previous + current)
+                    .ceilToDouble() /
+                100000)
+            .ceil() *
+        100000;
 
     List<String> sortedSucursales = ventasPorIDUbicacion.keys.toList()
       ..sort((a, b) =>
           ventasPorIDUbicacion[b]!.compareTo(ventasPorIDUbicacion[a]!));
+    // Tomamos las primeras 5 ubicaciones con mayores ventas
+    sortedSucursales = sortedSucursales.take(5).toList();
 
-    List<BarChartGroupData> listaBarChartData =
-        List.generate(sortedSucursales.length, (index) {
-      final idUbicacion = sortedSucursales[index];
-      final ventas = ventasPorIDUbicacion[idUbicacion]!;
+    List<BarChartGroupData> listaBarChartData = List.generate(
+      sortedSucursales.length,
+      (index) {
+        final idUbicacion = sortedSucursales[index];
+        final ventas = ventasPorIDUbicacion[idUbicacion]!;
 
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: ventas,
-            color: Colors.blue,
-            width: 35,
-            borderRadius: BorderRadius.circular(4),
-            backDrawRodData: BackgroundBarChartRodData(
-              show: true,
-              toY: maxSales,
-              color: Colors.grey[300],
+        return BarChartGroupData(
+          x: index,
+          barRods: [
+            BarChartRodData(
+              toY: ventas, // Usamos el valor de ventas directamente
+              color: Colors.blue,
+              width: 35,
+              borderRadius: const BorderRadius.all(Radius.circular(4)),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY:
+                    maxSales, // Usamos el valor máximo solo para la última barra
+                color: Colors.grey[300],
+              ),
             ),
-          ),
-        ],
-      );
-    });
+          ],
+        );
+      },
+    );
 
     return listaBarChartData;
   }
 
+  void calcularEstadisticas() {
+    sumaVentaNetaTotal = datosC1.fold<double>(0, (previousValue, element) {
+      return previousValue +
+          (double.tryParse(element['venta_neta'] ?? '0.0') ?? 0.0);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    String currentMonth = DateFormat('MMMM', 'es_MX').format(DateTime.now());
+
     return Scaffold(
-      endDrawer: Drawer(),
+      endDrawer: Drawer(
+        child: Column(
+          children: [
+            // Parte superior del Drawer
+            Container(
+              color: const Color.fromRGBO(0, 184, 239, 1),
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 25),
+                  InfoCard(
+                    name: nombre,
+                    profession: empresa,
+                  ),
+                ],
+              ),
+            ),
+
+            // Parte inferior del Drawer
+            Expanded(
+              child: Container(
+                color: const Color.fromRGBO(46, 48, 53, 1),
+                child: ListView(
+                  children: [
+                    // ExpansionTile para seleccionar la sucursal
+                    ExpansionTile(
+                      title: const Text(
+                        'Seleccionar Sucursal',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      children: sucursalesOptions.map((sucursal) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              selectedSucursal = sucursal;
+                              // calcularTotalventas(); // Reemplazar con el método correcto si es necesario
+                              // Cerrar el ExpansionTile
+                            });
+                          },
+                          child: Container(
+                            color: Colors.black26,
+                            child: ListTile(
+                              title: Text(
+                                sucursal,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,12 +297,33 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                Text(
+                  currentMonth.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54,
+                  ),
+                ),
+                Text(
+                  ' \$${NumberFormat(
+                    "#,##0.00",
+                  ).format(sumaVentaNetaTotal)}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
                 const SizedBox(height: 20),
-                // Gráfica de ventas por forma de pago
-                SizedBox(
-                  height: 300,
+                const SizedBox(height: 30),
+                AspectRatio(
+                  aspectRatio: 1.5,
                   child: SalesBarChart(
-                    convertirDatosAVentasBarChart(datosC1),
+                    convertirDatosAVentasBarChart(datosC1,
+                        selectedSucursal), // Pasamos la sucursal seleccionada a la función
                     datosC1
                         .map((dato) => dato['ubicacion'].toString())
                         .toList(),
@@ -215,14 +353,49 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
                           DataCell(Text(ubicacion ?? '')),
                           DataCell(Text(nombre ?? '')),
                           DataCell(Text(formaPago)),
-                          DataCell(Text(total?['totalVenta'].toString() ?? '')),
-                          DataCell(
-                              Text(total?['totalVentaNeta'].toString() ?? '')),
-                          DataCell(
-                              Text(total?['totalTickets'].toString() ?? '')),
+                          DataCell(Text(NumberFormat("#,##0.00")
+                              .format(total?['totalVenta'] ?? 0))),
+                          DataCell(Text(NumberFormat("#,##0.00")
+                              .format(total?['totalVentaNeta'] ?? 0))),
+                          DataCell(Text(NumberFormat("#,##0")
+                              .format(total?['totalTickets'] ?? 0))),
                         ]);
                       }).toList(),
-                      footerRows: [],
+                      footerRows: [
+                        DataRow(cells: [
+                          const DataCell(Text('')),
+                          const DataCell(Text('')),
+                          const DataCell(Text('Totales',
+                              style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataCell(Text(
+                            NumberFormat("#,##0.00").format(
+                                totalPorFormaPago.values.fold<double>(
+                                    0,
+                                    (previous, current) =>
+                                        previous +
+                                        (current['totalVenta'] ?? 0))),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          )),
+                          DataCell(Text(
+                            NumberFormat("#,##0.00").format(
+                                totalPorFormaPago.values.fold<double>(
+                                    0,
+                                    (previous, current) =>
+                                        previous +
+                                        (current['totalVentaNeta'] ?? 0))),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          )),
+                          DataCell(Text(
+                            NumberFormat("#,##0").format(
+                                totalPorFormaPago.values.fold<double>(
+                                    0,
+                                    (previous, current) =>
+                                        previous +
+                                        (current['totalTickets'] ?? 0))),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          )),
+                        ]),
+                      ],
                     ),
                   ),
                 ),

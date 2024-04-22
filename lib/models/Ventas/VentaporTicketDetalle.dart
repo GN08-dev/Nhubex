@@ -1,12 +1,15 @@
 import 'dart:convert';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
 
-//rep_venta_consolidada //Venta por Ticket (Detalle)
 class Ventaporticketdetalle extends StatefulWidget {
-  const Ventaporticketdetalle({super.key});
+  const Ventaporticketdetalle({Key? key});
 
   @override
   State<Ventaporticketdetalle> createState() => _VentaporticketdetalleState();
@@ -19,6 +22,18 @@ class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
   List<Map<String, dynamic>> datosC1 = [];
   int itemsPorPagina = 5;
   int paginaActual = 1;
+  double sumaVentaNetaTotal = 0.0;
+  Map<String, double> ventaNetaPorSucursal = {};
+  String selectedSucursal = 'Todas las sucursales';
+  List<String> sucursalesOptions = ['Todas las sucursales'];
+  List<Map<String, dynamic>> filtrarDatosPorSucursalTabla(
+      List<Map<String, dynamic>> datos, String sucursal) {
+    if (sucursal == 'Todas las sucursales') {
+      return datos;
+    } else {
+      return datos.where((dato) => dato['nombre'] == sucursal).toList();
+    }
+  }
 
   @override
   void initState() {
@@ -26,10 +41,12 @@ class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
     obtenerNombreEmpresa();
     obtenerNombreUsuario().then((_) {
       if (nombre.isNotEmpty) {
-        // Llama a la función obtenerDatos en segundo plano
         obtenerDatos().then((data) {
           setState(() {
             datosC1 = data;
+            calcularEstadisticas();
+            calcularVentaNetaPorSucursal();
+            actualizarListaSucursales();
           });
         });
       } else {
@@ -68,7 +85,6 @@ class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
         final Map<String, dynamic> data = json.decode(response.data);
         final List<dynamic> c1Data = data['RESPUESTA']['C1'];
 
-        // Procesa y almacena los datos recibidos en `datosC1`
         List<Map<String, dynamic>> datos = [];
         for (var item in c1Data) {
           datos.add(Map<String, dynamic>.from(item));
@@ -95,74 +111,294 @@ class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
   }
 
   List<Map<String, dynamic>> getDatosPagina(int pagina) {
+    final datosFiltrados =
+        filtrarDatosPorSucursalTabla(datosC1, selectedSucursal);
     final startIndex = (pagina - 1) * itemsPorPagina;
     final endIndex = startIndex + itemsPorPagina;
-    return datosC1.sublist(
-        startIndex, endIndex < datosC1.length ? endIndex : datosC1.length);
+    final datosPagina = datosFiltrados.sublist(startIndex,
+        endIndex < datosFiltrados.length ? endIndex : datosFiltrados.length);
+    return datosPagina;
   }
 
-  //grafica proximante
+  void calcularEstadisticas() {
+    sumaVentaNetaTotal = datosC1.fold<double>(0, (previousValue, element) {
+      return previousValue +
+          (double.tryParse(element['Venta_Neta'] ?? '0.0') ?? 0.0);
+    });
+  }
+
+  void calcularVentaNetaPorSucursal() {
+    for (var item in datosC1) {
+      final nombreSucursal = item['nombre'] as String;
+      final ventaNeta = double.tryParse(item['Venta_Neta'] ?? '0.0') ?? 0.0;
+      ventaNetaPorSucursal[nombreSucursal] =
+          (ventaNetaPorSucursal[nombreSucursal] ?? 0) + ventaNeta;
+    }
+  }
+
+  List<BarChartGroupData> convertirDatosAVentasBarChart(List<dynamic> datos) {
+    Map<String, double> ventasPorIDUbicacion = {};
+
+    for (var registro in datos) {
+      String idUbicacion = registro['ubicacion'].toString();
+      double valor = double.tryParse(registro['Venta_Neta'] ?? '0.0') ?? 0.0;
+      ventasPorIDUbicacion[idUbicacion] =
+          (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
+    }
+
+    // Ordenamos las ubicaciones por ventas de mayor a menor
+    List<String> sortedSucursales = ventasPorIDUbicacion.keys.toList()
+      ..sort((a, b) =>
+          ventasPorIDUbicacion[b]!.compareTo(ventasPorIDUbicacion[a]!));
+
+    // Tomamos las primeras 5 ubicaciones con mayores ventas
+    sortedSucursales = sortedSucursales.take(5).toList();
+
+    List<BarChartGroupData> listaBarChartData = List.generate(
+      sortedSucursales.length,
+      (index) {
+        final idUbicacion = sortedSucursales[index];
+        final ventas = ventasPorIDUbicacion[idUbicacion]!;
+
+        // Si es la última ubicación, usamos el valor de ventas como máximo para el eje y
+        double? maxY = index == sortedSucursales.length - 1 ? ventas : null;
+
+        return BarChartGroupData(
+          x: index,
+          barRods: [
+            BarChartRodData(
+              toY: ventas, // Usamos el valor de ventas directamente
+              color: Colors.blue,
+              width: 35,
+              borderRadius: BorderRadius.circular(4),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: ventas, // Usamos el valor máximo solo para la última barra
+                color: Colors.grey[300],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return listaBarChartData;
+  }
+
+  List<String> obtenerUbicacionesUnicas(List<Map<String, dynamic>> datos) {
+    Set<String> ubicaciones = Set();
+    for (var dato in datos) {
+      if (dato['ubicacion'] != null) {
+        ubicaciones.add(dato['ubicacion'].toString());
+      }
+    }
+    return ubicaciones.toList();
+  }
+
+  void actualizarListaSucursales() {
+    Set<String> sucursales = Set();
+    for (var dato in datosC1) {
+      if (dato['nombre'] != null) {
+        sucursales.add(dato['nombre'].toString());
+      }
+    }
+    setState(() {
+      sucursalesOptions.clear();
+      sucursalesOptions.add('Todas las sucursales');
+      sucursalesOptions.addAll(sucursales);
+      selectedSucursal = 'Todas las sucursales';
+    });
+  }
+
+  List<Map<String, dynamic>> filtrarDatosPorSucursal(
+      List<Map<String, dynamic>> datos, String sucursal) {
+    if (sucursal == 'Todas las sucursales') {
+      return datos;
+    } else {
+      return datos.where((dato) => dato['nombre'] == sucursal).toList();
+    }
+  }
+
+  double calcularSumaVentaNetaTotal() {
+    final datosFiltrados =
+        filtrarDatosPorSucursalTabla(datosC1, selectedSucursal);
+    return datosFiltrados.fold<double>(0, (previousValue, element) {
+      return previousValue +
+          (double.tryParse(element['Venta_Neta'] ?? '0.0') ?? 0.0);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final paginasTotales = (datosC1.length / itemsPorPagina).ceil();
+    String currentMonth = DateFormat('MMMM', 'es_MX').format(DateTime.now());
 
+    final datosFiltrados =
+        filtrarDatosPorSucursalTabla(datosC1, selectedSucursal);
+    final paginasTotales = (datosFiltrados.length / itemsPorPagina).ceil();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ventas Ticket'),
-      ),
-      body: loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      endDrawer: Drawer(
+        child: Column(
+          children: [
+            // Parte superior del Drawer
+            Container(
+              color: const Color.fromRGBO(0, 184, 239, 1),
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 25),
+                  InfoCard(
+                    name: nombre,
+                    profession: empresa,
+                  ),
+                ],
+              ),
+            ),
+
+            // Parte inferior del Drawer
+            Expanded(
+              child: Container(
+                color: const Color.fromRGBO(46, 48, 53, 1),
+                child: ListView(
                   children: [
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: CustomDataTable(
-                        columns: const [
-                          DataColumn(label: Text('Ubicación')),
-                          DataColumn(label: Text('Sucursal')),
-                          DataColumn(label: Text('Ticket')),
-                          DataColumn(label: Text('Código de Barras')),
-                          DataColumn(label: Text('Piezas')),
-                          DataColumn(label: Text('Precio Unitario')),
-                          DataColumn(label: Text('Precio Total')),
-                          DataColumn(label: Text('Impuestos')),
-                          DataColumn(label: Text('Subtotal')),
-                          DataColumn(label: Text('Venta')),
-                          DataColumn(label: Text('Venta Neta')),
-                          DataColumn(label: Text('Factura')),
-                          DataColumn(label: Text('Costo')),
-                          DataColumn(label: Text('Vendedor')),
-                        ],
-                        rows: getDatosPagina(paginaActual)
-                            .map((datos) => DataRow(
-                                  cells: [
-                                    DataCell(Text(datos['ubicacion'] ?? '')),
-                                    DataCell(Text(datos['nombre'] ?? '')),
-                                    DataCell(Text(datos['Ticket'] ?? '')),
-                                    DataCell(Text(datos['CODIGOBARRAS'] ?? '')),
-                                    DataCell(Text(datos['Piezas'] ?? '')),
-                                    DataCell(Text(datos['PRECIO_UNIT'] ?? '')),
-                                    DataCell(Text(datos['PRECIO_TOTAL'] ?? '')),
-                                    DataCell(Text(datos['Impuestos'] ?? '')),
-                                    DataCell(Text(datos['SUBTOTAL'] ?? '')),
-                                    DataCell(Text(datos['Venta'] ?? '')),
-                                    DataCell(Text(datos['Venta_Neta'] ?? '')),
-                                    DataCell(Text(datos['Factura'] ?? '')),
-                                    DataCell(Text(datos['costo'] ?? '')),
-                                    DataCell(Text(datos['Vendedor'] ?? '')),
-                                  ],
-                                ))
-                            .toList(),
-                        footerRows: [],
+                    // ExpansionTile para seleccionar la sucursal
+                    ExpansionTile(
+                      title: const Text(
+                        'Seleccionar Sucursal',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      children: sucursalesOptions.map((sucursal) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              selectedSucursal = sucursal;
+                              // calcularTotalventas(); // Reemplazar con el método correcto si es necesario
+                              // Cerrar el ExpansionTile
+                            });
+                          },
+                          child: Container(
+                            color: Colors.black26,
+                            child: ListTile(
+                              title: Text(
+                                sucursal,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      appBar: AppBar(
+        title: const Column(
+          children: [
+            Text(
+              'Ventas por Ticket',
+              style: TextStyle(fontSize: 18),
+            ),
+            Text(
+              '(Detalle)',
+              style: TextStyle(fontSize: 16),
+            )
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+          child: loading
+              ? const Center(
+                  child: CircularProgressIndicator(),
+                )
+              : Column(
+                  children: [
+                    Text(
+                      currentMonth.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54,
                       ),
                     ),
+                    Text(
+                      ' \$${NumberFormat(
+                        "#,##0.00",
+                      ).format(calcularSumaVentaNetaTotal())}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 50),
+                    SizedBox(
+                      height: 300, // Altura deseada
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: SalesBarChart(
+                          convertirDatosAVentasBarChart(filtrarDatosPorSucursal(
+                              datosC1, selectedSucursal)),
+                          obtenerUbicacionesUnicas(filtrarDatosPorSucursal(
+                              datosC1, selectedSucursal)),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: CustomDataTable(
+                          columns: const [
+                            DataColumn(label: Text('Ubicación')),
+                            DataColumn(label: Text('Sucursal')),
+                            DataColumn(label: Text('Ticket')),
+                            DataColumn(label: Text('Código de Barras')),
+                            DataColumn(label: Text('Piezas')),
+                            DataColumn(label: Text('Precio Unitario')),
+                            DataColumn(label: Text('Precio Total')),
+                            DataColumn(label: Text('Impuestos')),
+                            DataColumn(label: Text('Subtotal')),
+                            DataColumn(label: Text('Venta')),
+                            DataColumn(label: Text('Venta Neta')),
+                            DataColumn(label: Text('Factura')),
+                            DataColumn(label: Text('Costo')),
+                            DataColumn(label: Text('Vendedor')),
+                          ],
+                          rows: getDatosPagina(paginaActual)
+                              .map((datos) => DataRow(
+                                    cells: [
+                                      DataCell(Text(datos['ubicacion'] ?? '')),
+                                      DataCell(Text(datos['nombre'] ?? '')),
+                                      DataCell(Text(datos['Ticket'] ?? '')),
+                                      DataCell(
+                                          Text(datos['CODIGOBARRAS'] ?? '')),
+                                      DataCell(Text(datos['Piezas'] ?? '')),
+                                      DataCell(
+                                          Text(datos['PRECIO_UNIT'] ?? '')),
+                                      DataCell(
+                                          Text(datos['PRECIO_TOTAL'] ?? '')),
+                                      DataCell(Text(datos['Impuestos'] ?? '')),
+                                      DataCell(Text(datos['SUBTOTAL'] ?? '')),
+                                      DataCell(Text(datos['Venta'] ?? '')),
+                                      DataCell(Text(datos['Venta_Neta'] ?? '')),
+                                      DataCell(Text(datos['Factura'] ?? '')),
+                                      DataCell(Text(datos['costo'] ?? '')),
+                                      DataCell(Text(datos['Vendedor'] ?? '')),
+                                    ],
+                                  ))
+                              .toList(),
+                          footerRows: [],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -173,9 +409,15 @@ class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
                                 paginaActual--;
                               });
                             },
-                            icon: Icon(Icons.arrow_back),
+                            icon: const Icon(Icons.arrow_back),
                           ),
-                        Text('Página $paginaActual de $paginasTotales'),
+                        Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Página $paginaActual de $paginasTotales',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                         if (paginaActual < paginasTotales)
                           IconButton(
                             onPressed: () {
@@ -183,14 +425,12 @@ class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
                                 paginaActual++;
                               });
                             },
-                            icon: Icon(Icons.arrow_forward),
+                            icon: const Icon(Icons.arrow_forward),
                           ),
                       ],
                     ),
                   ],
-                ),
-              ),
-            ),
+                )),
     );
   }
 }
