@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/appbar/appbar.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/Menu_Lateral.dart';
 
 class Prenomina extends StatefulWidget {
   final String companyName;
@@ -14,7 +14,7 @@ class _PrenominaState extends State<Prenomina> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: SideMenu(companyName: widget.companyName),
+      drawer: Menu_Lateral(companyName: widget.companyName),
       appBar: CustomAppBar(
         titleText: widget.companyName,
       ),

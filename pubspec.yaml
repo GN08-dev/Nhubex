@@ -15,6 +15,7 @@ dependencies:
   dio: ^5.4.1
   firebase_auth: ^4.17.9
   firebase_core: ^2.27.1
+  firebase_remote_config: ^4.4.3
   fl_chart: ^0.67.0
   flutter:
     sdk: flutter

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
 import 'package:flutter_proyect/models/Reportes/Reportes.dart';
 import 'package:flutter_proyect/models/Registro/Resgistro.dart';
 import 'package:flutter_proyect/models/prenomina/prenomina.dart';
-import 'package:flutter_proyect/src/Menu_Principal.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/Menu_Lateral.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menu_inicio_Administrador/Menu_Principal_Administrador.dart';
 import 'package:flutter_proyect/src/login.dart';
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,9 +19,9 @@ class AppRouter {
               return const CircularProgressIndicator();
             }
             if (snapshot.hasData) {
-              return SideMenu(companyName: snapshot.data!);
+              return Menu_Lateral(companyName: snapshot.data!);
             } else {
-              return const SideMenu(companyName: '');
+              return const Menu_Lateral(companyName: '');
             }
           },
         ),
@@ -38,9 +38,9 @@ class AppRouter {
               return const CircularProgressIndicator();
             }
             if (snapshot.hasData) {
-              return MainMenu(companyName: snapshot.data!);
+              return Menu_Principal_Administrador(companyName: snapshot.data!);
             } else {
-              return const MainMenu(companyName: '');
+              return const Menu_Principal_Administrador(companyName: '');
             }
           },
         ),
@@ -57,7 +57,7 @@ class AppRouter {
             if (snapshot.hasData) {
               return ReportesMain(companyName: snapshot.data!);
             } else {
-              return const MainMenu(companyName: '');
+              return const Menu_Principal_Administrador(companyName: '');
             }
           },
         ),
@@ -105,43 +105,6 @@ class AppRouter {
 
   static Future<void> cerrarSesion() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('nombre_empresa');
+    await prefs.clear();
   }
 }
-/*
-class RouterReportes {
-  static Route<dynamic>? generateRoute(RouteSettings settings) {
-    // ignore: unused_local_variable
-    final args = settings.arguments as Map<String, dynamic>?;
-
-    if (settings.name == '/inventario-extracto-costo-almacen') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/inventario-referencia') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/inventario-negativo') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/monitoreo-almacen') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/monitoreo-clientes') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/monitoreo-usuario') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/ventas-del-diario') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/ventas-por-punto-de-venta') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/ventas-por-referencia') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/ventas-por-vendedor') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/consulta-de-producto') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else if (settings.name == '/consulta-de-productos-camara') {
-      return MaterialPageRoute(builder: (_) => const Registro(companyName: ''));
-    } else {
-      // Si la ruta no es reconocida, retornamos null o puedes manejar un caso por defecto.
-      return null;
-    }
-  }
-}
-*/

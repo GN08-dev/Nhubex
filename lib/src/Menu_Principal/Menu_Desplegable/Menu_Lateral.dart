@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/TitulosDeMenu.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.dart';
+import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/TitulosDeMenu.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/redireccionamiento.dart';
 
-class SideMenu extends StatefulWidget {
+class Menu_Lateral extends StatefulWidget {
   final String companyName;
-  const SideMenu({Key? key, required this.companyName}) : super(key: key);
+  const Menu_Lateral({Key? key, required this.companyName}) : super(key: key);
 
   @override
-  State<SideMenu> createState() => _SideMenuState();
+  State<Menu_Lateral> createState() => _Menu_LateralState();
 }
 
-class _SideMenuState extends State<SideMenu> {
+class _Menu_LateralState extends State<Menu_Lateral> {
   Map<String, Color> itemColors = {};
   bool isReportesExpanded = false;
 

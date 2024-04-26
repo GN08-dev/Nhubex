@@ -28,7 +28,7 @@ class ButtonDataProvider {
       'info': 'sin info'
     }, //rep_venta_consolidada_forma_pago
     {
-      'title': 'Venta por Ticket (Detalle)',
+      'title': 'Venta por Ticket',
       'info': 'sin info'
     }, //rep_venta_ticket_detalle
     {
@@ -36,7 +36,7 @@ class ButtonDataProvider {
       'info': 'sin info'
     }, //rep_venta_sucursal_detalle
     {
-      'title': 'Venta por Forma de Pago (Detalle)',
+      'title': 'Venta por Forma de Pago',
       'info': 'sin info'
     }, //rep_venta_detalle_forma_pago
     {

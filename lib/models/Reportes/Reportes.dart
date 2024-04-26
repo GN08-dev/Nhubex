@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/appbar/appbar.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/Menu_Lateral.dart';
 import 'package:flutter_proyect/components/contenedores/ReportesCt.dart';
 // ignore: unused_import
 import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
@@ -25,7 +25,7 @@ class _ReportesMainState extends State<ReportesMain> {
     return Scaffold(
       backgroundColor: Colors.white,
       drawerScrimColor: Colors.transparent,
-      drawer: SideMenu(
+      drawer: Menu_Lateral(
         companyName: widget.companyName,
       ),
       appBar: CustomAppBar(titleText: 'Reportes'),

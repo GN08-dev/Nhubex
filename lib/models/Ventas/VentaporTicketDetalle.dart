@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
+import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
@@ -300,11 +300,11 @@ class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
         title: const Column(
           children: [
             Text(
-              'Ventas por Ticket',
+              'Ventas por ',
               style: TextStyle(fontSize: 18),
             ),
             Text(
-              '(Detalle)',
+              'Ticket',
               style: TextStyle(fontSize: 16),
             )
           ],

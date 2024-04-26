@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/botones/custom_button.dart';
+import 'package:flutter_proyect/Pruebas/prueba2.dart';
 import 'package:flutter_proyect/Pruebas/test.dart';
 import 'package:flutter_proyect/models/Reportes/Reportes.dart';
 import 'package:flutter_proyect/models/prenomina/prenomina.dart';
@@ -30,7 +31,7 @@ class WelcomeInfo extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const TestPrueba2(),
+                builder: (context) => const Prueba2(),
               ),
             );
           },

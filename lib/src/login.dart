@@ -1,8 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_proyect/src/Menu_Principal.dart';
+import 'package:dio/dio.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menu_inicio_Administrador/Menu_Principal_Administrador.dart';
 import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menus_Inicio_Usuario/Menu_Principal_Usuarios.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MyAppForm extends StatefulWidget {
@@ -30,15 +32,29 @@ class _MyAppFormState extends State<MyAppForm> {
 
     empresaController.addListener(actualizarImagen);
 
-    // Llamar a obtenerNombreEmpresa dentro de un bloque async
-    obtenerNombreEmpresa().then((nombreEmpresa) {
-      if (nombreEmpresa != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MainMenu(companyName: nombreEmpresa),
-          ),
-        );
+    // Llamar a obtenerDatosUsuario dentro de un bloque async
+    obtenerDatosUsuario().then((datosUsuario) {
+      if (datosUsuario['nombre'] != null) {
+        // Redirigir según el rol
+        if (datosUsuario['rol'] == 'usuario') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Menu_Principal_Usuarios(
+                  companyName: datosUsuario['empresa']!),
+            ),
+          );
+        } else {
+          if (empresaController.text.isNotEmpty) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => Menu_Principal_Administrador(
+                    companyName: empresaController.text),
+              ),
+            );
+          }
+        }
       }
     });
   }
@@ -98,33 +114,38 @@ class _MyAppFormState extends State<MyAppForm> {
             // Verificar el rol del usuario
             String rol = userDoc['rol'];
             String nombre = userDoc['Nombre'];
+            String empresaSiglas = userDoc['empresa'];
+            print('Empresa del usuario: $empresaSiglas');
 
             if (rol == 'usuario' || rol == 'Admin') {
-              // Guardar el nombre de la empresa en SharedPreferences
-              await guardarNombreEmpresa(
-                  EmpresaImageHelper.getCompanyName(empresa));
+              // Obtener el valor de empresa siglas
+              String empresaFinal = empresaSiglas.isNotEmpty
+                  ? empresaSiglas
+                  : empresaController.text;
 
-              ///
-              await guardarDatosUsuario(uid, nombre, rol);
-              // Verificar si los datos se han guardado correctamente
-              /*SharedPreferences prefs = await SharedPreferences.getInstance();
-              String? savedUID = prefs.getString('uid');
-              String? savedNombre = prefs.getString('Nombre');
-              String? savedRol = prefs.getString('rol');
-
-              print('Datos del usuario guardados en SharedPreferences:');
-              print('UID: $savedUID');
-              print('Nombre: $savedNombre');
-              print('Rol: $savedRol');*/
-
-              // Navegar al menú principal
-              String? nombreEmpresa = await obtenerNombreEmpresa();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MainMenu(companyName: nombreEmpresa!),
-                ),
-              );
+              // Guardar los datos del usuario en SharedPreferences
+              await guardarDatosUsuario(uid, nombre, rol, empresaFinal);
+              // Redirigir según el rol
+              if (rol == 'usuario') {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        Menu_Principal_Usuarios(companyName: empresaSiglas),
+                  ),
+                );
+              } else if (rol == 'Admin') {
+                if (empresaSiglas == null || empresaSiglas.isEmpty) {
+                  empresaSiglas = empresaController.text;
+                }
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Menu_Principal_Administrador(
+                        companyName: empresaSiglas),
+                  ),
+                );
+              }
             } else {
               mostrarAlerta('Error',
                   'No tienes los permisos necesarios para iniciar sesión.');
@@ -143,13 +164,13 @@ class _MyAppFormState extends State<MyAppForm> {
     }
   }
 
-  // Función para guardar UID, Nombre, y Rol en SharedPreferences
   Future<void> guardarDatosUsuario(
-      String uid, String nombre, String rol) async {
+      String uid, String nombre, String rol, String empresaSiglas) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('uid', uid);
     await prefs.setString('Nombre', nombre);
     await prefs.setString('rol', rol);
+    await prefs.setString('empresa', empresaSiglas);
   }
 
   Future<Map<String, String?>> obtenerDatosUsuario() async {
@@ -158,22 +179,14 @@ class _MyAppFormState extends State<MyAppForm> {
     String? uid = prefs.getString('uid');
     String? nombre = prefs.getString('Nombre');
     String? rol = prefs.getString('rol');
+    String? empresaSiglas = prefs.getString('empresa');
 
     return {
       'uid': uid,
-      'Nombre': nombre,
+      'nombre': nombre,
       'rol': rol,
+      'empresa': empresaSiglas,
     };
-  }
-
-  Future<void> guardarNombreEmpresa(String nombreEmpresa) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('nombre_empresa', nombreEmpresa);
-  }
-
-  Future<String?> obtenerNombreEmpresa() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('nombre_empresa');
   }
 
   void mostrarAlerta(String titulo, String mensaje) {

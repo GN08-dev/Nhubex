@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/appbar/appbar_reportes.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/Menu_Lateral.dart';
 import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
 
 class Registro extends StatefulWidget {
@@ -139,7 +139,7 @@ class _RegistroState extends State<Registro> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: SideMenu(companyName: widget.companyName),
+      drawer: Menu_Lateral(companyName: widget.companyName),
       appBar: AppBarReportes(titleText: ''),
       body: ListView(
         children: <Widget>[

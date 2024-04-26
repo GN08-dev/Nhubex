@@ -61,7 +61,7 @@ class Reportes {
         context,
         MaterialPageRoute(builder: (_) => const VentaFormaPagoConsolidada()),
       );
-    } else if (item['title'] == 'Venta por Ticket (Detalle)') {
+    } else if (item['title'] == 'Venta por Ticket') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const Ventaporticketdetalle()), //miau
@@ -72,7 +72,7 @@ class Reportes {
         MaterialPageRoute(
             builder: (_) => const VentasSucursalDetalle()), //listo
       );
-    } else if (item['title'] == 'Venta por Forma de Pago (Detalle)') {
+    } else if (item['title'] == 'Venta por Forma de Pago') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const VentaFormaPagoDetalle()),

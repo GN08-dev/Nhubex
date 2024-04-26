@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
-import 'package:flutter_proyect/components/contenedores/Incio.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/appbar/appbar.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/Menu_Lateral.dart';
+import 'package:flutter_proyect/src/Menu_Principal/Menus_Inicio_Usuario/Inicio_Usuario.dart';
 
-class MainMenu extends StatefulWidget {
+class Menu_Principal_Usuarios extends StatefulWidget {
   final String companyName;
 
-  const MainMenu({super.key, required this.companyName});
+  const Menu_Principal_Usuarios({super.key, required this.companyName});
 
   @override
-  State<MainMenu> createState() => _MainMenuState();
+  State<Menu_Principal_Usuarios> createState() =>
+      _Menu_Principal_UsuariosState();
 }
 
-class _MainMenuState extends State<MainMenu> {
+class _Menu_Principal_UsuariosState extends State<Menu_Principal_Usuarios> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: SideMenu(
+      drawer: Menu_Lateral(
         companyName: widget.companyName,
       ),
       appBar: CustomAppBar(titleText: 'Menu Principal'),
@@ -33,7 +34,7 @@ class _MainMenuState extends State<MainMenu> {
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.white),
                   ),
-                  child: WelcomeInfo(
+                  child: Incio_Usuario(
                     companyName: widget.companyName,
                   )),
             )
