@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable_reportes.dart/Titulos_reportes.dart';
+import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
 
 class MenuLateralReportes extends StatefulWidget {
   final Function(String) onTimePeriodSelected;
