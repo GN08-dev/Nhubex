@@ -65,10 +65,11 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
     return nombre;
   }
 
+  // Función para obtener el nombre de la empresa
   Future<void> obtenerNombreEmpresa() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      empresa = prefs.getString('Nombre_Empresa') ?? '';
+      empresa = prefs.getString('nombreEmpresa') ?? '';
     });
   }
 

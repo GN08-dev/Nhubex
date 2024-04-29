@@ -15,34 +15,34 @@ class Reportes {
     if (item['title'] == 'Inventario de Extracto costo Almacen') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const Registro(companyName: '')),
+        MaterialPageRoute(builder: (_) => const Registro()),
       );
     } else if (item['title'] == 'Inventario de referencia') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const Registro(companyName: '')),
+        MaterialPageRoute(builder: (_) => const Registro()),
       );
     } else if (item['title'] == 'Inventario negativo') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const Registro(companyName: '')),
+        MaterialPageRoute(builder: (_) => const Registro()),
       );
 
       //monitoreo
     } else if (item['title'] == 'Monitoreo de almacen') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const Registro(companyName: '')),
+        MaterialPageRoute(builder: (_) => const Registro()),
       );
     } else if (item['title'] == 'Monitoreo de clientes') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const Registro(companyName: '')),
+        MaterialPageRoute(builder: (_) => const Registro()),
       );
     } else if (item['title'] == 'Monitoreo de Usuario') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const Registro(companyName: '')),
+        MaterialPageRoute(builder: (_) => const Registro()),
       );
 
       ///ventas

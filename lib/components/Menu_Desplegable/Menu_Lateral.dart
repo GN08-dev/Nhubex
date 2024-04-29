@@ -1,11 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/TitulosDeMenu.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.dart';
 import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
-import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/TitulosDeMenu.dart';
-import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/redireccionamiento.dart';
 
 class Menu_Lateral extends StatefulWidget {
-  final String companyName;
-  const Menu_Lateral({Key? key, required this.companyName}) : super(key: key);
+  const Menu_Lateral({Key? key}) : super(key: key);
 
   @override
   State<Menu_Lateral> createState() => _Menu_LateralState();
@@ -14,13 +15,24 @@ class Menu_Lateral extends StatefulWidget {
 class _Menu_LateralState extends State<Menu_Lateral> {
   Map<String, Color> itemColors = {};
   bool isReportesExpanded = false;
-
+  String empresa = '';
   String nombreUsuario = '';
+  String rolUsuario = '';
 
   @override
   void initState() {
     super.initState();
     obtenerNombreUsuario();
+    obtenerRolUsuario();
+    obtenerNombreEmpresa(); // Agregar esta línea para obtener el nombre de la empresa
+  }
+
+  // Función para obtener el nombre de la empresa
+  Future<void> obtenerNombreEmpresa() async {
+    String nombreEmpresa = await MenuHelper.obtenerNombreEmpresa();
+    setState(() {
+      empresa = nombreEmpresa;
+    });
   }
 
   // Función para obtener el nombre del usuario
@@ -31,9 +43,19 @@ class _Menu_LateralState extends State<Menu_Lateral> {
     });
   }
 
+  // Función para obtener el rol del usuario
+  Future<void> obtenerRolUsuario() async {
+    String rol = await MenuHelper.obtenerRolUsuario();
+    setState(() {
+      rolUsuario = rol;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final sideMenus = MenuDataProvider.getSideMenus();
+    final sideMenus = rolUsuario == 'usuario'
+        ? MenuDataProviderUsuario.getSideMenusUsuario()
+        : MenuDataProvider.getSideMenus();
 
     return Drawer(
       child: Column(
@@ -48,7 +70,8 @@ class _Menu_LateralState extends State<Menu_Lateral> {
                   const SizedBox(height: 25),
                   InfoCard(
                     name: nombreUsuario,
-                    profession: widget.companyName,
+                    profession:
+                        empresa, // Cambiar 'profession' por el nombre de la empresa
                   ),
                 ],
               ),

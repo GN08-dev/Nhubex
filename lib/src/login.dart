@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_proyect/src/Menu_Principal/Menu_inicio_Administrador/Menu_Principal_Administrador.dart';
+import 'package:flutter_proyect/src/Menu_Principa.dart';
 import 'package:flutter_proyect/models/Contenedor_imagenes/EmpresaImageHelper.dart';
-import 'package:flutter_proyect/src/Menu_Principal/Menus_Inicio_Usuario/Menu_Principal_Usuarios.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MyAppForm extends StatefulWidget {
@@ -32,28 +30,24 @@ class _MyAppFormState extends State<MyAppForm> {
 
     empresaController.addListener(actualizarImagen);
 
-    // Llamar a obtenerDatosUsuario dentro de un bloque async
-    obtenerDatosUsuario().then((datosUsuario) {
+    WidgetsBinding.instance?.addPostFrameCallback((_) async {
+      final datosUsuario = await obtenerDatosUsuario();
       if (datosUsuario['nombre'] != null) {
         // Redirigir según el rol
         if (datosUsuario['rol'] == 'usuario') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => Menu_Principal_Usuarios(
-                  companyName: datosUsuario['empresa']!),
+              builder: (context) => Menu_Principal(),
             ),
           );
-        } else {
-          if (empresaController.text.isNotEmpty) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => Menu_Principal_Administrador(
-                    companyName: empresaController.text),
-              ),
-            );
-          }
+        } else if (empresaController.text.isNotEmpty) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Menu_Principal(),
+            ),
+          );
         }
       }
     });
@@ -82,95 +76,92 @@ class _MyAppFormState extends State<MyAppForm> {
 
     if (empresa.isEmpty || usuario.isEmpty || password.isEmpty) {
       mostrarAlerta('Error', 'Favor de llenar el formulario');
-    } else if (!EmpresaImageHelper.empresaSiglas
-        .containsKey(empresa.toLowerCase())) {
+      return;
+    }
+
+    if (!EmpresaImageHelper.empresaSiglas.containsKey(empresa.toLowerCase())) {
       mostrarAlerta('Error', 'Empresa no válida');
-    } else {
-      try {
-        // Iniciar sesión con Firebase Authentication
-        UserCredential userCredential =
-            await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: usuario,
-          password: password,
-        );
+      return;
+    }
 
-        // Verificar si la autenticación fue exitosa
-        if (userCredential.user != null) {
-          // Captura el UID del usuario autenticado
-          String uid = userCredential.user!.uid;
-          //String mydocID = 'user.uid';
+    try {
+      // Iniciar sesión con Firebase Authentication
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: usuario,
+        password: password,
+      );
 
-          // Imprime el UID
-          print('UID del usuario autenticado: $uid');
+      // Verificar si la autenticación fue exitosa
+      if (userCredential.user != null) {
+        // Captura el UID del usuario autenticado
+        String uid = userCredential.user!.uid;
 
-          // Obtener información del usuario de Firestore
-          DocumentSnapshot userDoc = await FirebaseFirestore.instance
-              .collection('usuarios')
-              .doc(userCredential.user!.uid)
-              .get();
-          print('DocumentSnapshot del usuario: ${userDoc.data()}');
+        // Obtener información del usuario de Firestore
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('usuarios')
+            .doc(userCredential.user!.uid)
+            .get();
 
-          if (userDoc.exists) {
-            // Verificar el rol del usuario
-            String rol = userDoc['rol'];
-            String nombre = userDoc['Nombre'];
-            String empresaSiglas = userDoc['empresa'];
-            print('Empresa del usuario: $empresaSiglas');
+        if (userDoc.exists) {
+          // Verificar el rol del usuario
+          String rol = userDoc['rol'];
+          String nombre = userDoc['Nombre'];
+          String empresaSiglas = userDoc['empresa'];
 
-            if (rol == 'usuario' || rol == 'Admin') {
-              // Obtener el valor de empresa siglas
-              String empresaFinal = empresaSiglas.isNotEmpty
-                  ? empresaSiglas
-                  : empresaController.text;
+          // Obtener el valor de empresa siglas
+          String empresaFinal =
+              empresaSiglas.isNotEmpty ? empresaSiglas : empresaController.text;
 
-              // Guardar los datos del usuario en SharedPreferences
-              await guardarDatosUsuario(uid, nombre, rol, empresaFinal);
-              // Redirigir según el rol
-              if (rol == 'usuario') {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        Menu_Principal_Usuarios(companyName: empresaSiglas),
-                  ),
-                );
-              } else if (rol == 'Admin') {
-                if (empresaSiglas == null || empresaSiglas.isEmpty) {
-                  empresaSiglas = empresaController.text;
-                }
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Menu_Principal_Administrador(
-                        companyName: empresaSiglas),
-                  ),
-                );
-              }
-            } else {
-              mostrarAlerta('Error',
-                  'No tienes los permisos necesarios para iniciar sesión.');
+          // Obtener el nombre de la empresa
+          String nombreEmpresa =
+              EmpresaImageHelper.getCompanyName(empresaFinal);
+
+          // Si el usuario es un usuario regular, verificar la empresa
+          if (rol == 'usuario') {
+            // Verificar si la empresa es la misma que la proporcionada en el formulario
+            if (empresaFinal != empresa) {
+              mostrarAlerta('Error', 'No tienes acceso a esta empresa.');
+              return;
             }
+          }
+
+          // Guardar los datos del usuario en SharedPreferences
+          await guardarDatosUsuario(
+              uid, nombre, rol, empresaFinal, nombreEmpresa);
+          // Redirigir según el rol
+          if (rol == 'usuario' || rol == 'Admin') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => Menu_Principal(),
+              ),
+            );
           } else {
-            mostrarAlerta('Error', 'Usuario no encontrado');
+            mostrarAlerta('Error',
+                'No tienes los permisos necesarios para iniciar sesión.');
           }
         } else {
-          mostrarAlerta('Error', 'Credenciales inválidas');
+          mostrarAlerta('Error', 'Usuario no encontrado');
         }
-      } on FirebaseAuthException catch (e) {
-        mostrarAlerta('Error', e.message ?? 'Ocurrió un error');
-      } catch (e) {
-        mostrarAlerta('Error', 'Ocurrió un error inesperado');
+      } else {
+        mostrarAlerta('Error', 'Credenciales inválidas');
       }
+    } on FirebaseAuthException catch (e) {
+      mostrarAlerta('Error', e.message ?? 'Ocurrió un error');
+    } catch (e) {
+      mostrarAlerta('Error', 'Ocurrió un error inesperado');
     }
   }
 
-  Future<void> guardarDatosUsuario(
-      String uid, String nombre, String rol, String empresaSiglas) async {
+  Future<void> guardarDatosUsuario(String uid, String nombre, String rol,
+      String empresaSiglas, String nombreEmpresa) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('uid', uid);
     await prefs.setString('Nombre', nombre);
     await prefs.setString('rol', rol);
     await prefs.setString('empresa', empresaSiglas);
+    await prefs.setString('nombreEmpresa', nombreEmpresa);
   }
 
   Future<Map<String, String?>> obtenerDatosUsuario() async {

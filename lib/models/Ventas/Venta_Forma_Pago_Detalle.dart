@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'dart:math';
-import 'package:fl_chart/fl_chart.dart';
+
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.dart';
 import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
 import 'package:flutter_proyect/models/Ventas/Graficas/GraficaDePastelDeForma_pagoDetalle.dart';
 import 'package:intl/intl.dart';
@@ -19,56 +19,34 @@ class VentaFormaPagoDetalle extends StatefulWidget {
 }
 
 class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
-  String nombreUsuario = '';
-  String nombreEmpresa = '';
   bool loading = false;
   List<Map<String, dynamic>> datosC1 = [];
-  Map<String, Map<String, dynamic>> sucursalesData = {};
-  String selectedSucursal = 'Sucursal';
-  List<String> sucursales = ['Sucursal'];
-
-  double totalEfectivoVenta = 0.0;
-  double totalEfectivoVentaNeta = 0.0;
-  double totalTdcVenta = 0.0;
-  double totalTdcVentaNeta = 0.0;
-  double totalTddVenta = 0.0;
-  double totalTddVentaNeta = 0.0;
-  double totalTickets = 0;
+  List<String> formasDePago = [];
+  List<String> nombres = [];
+  Map<String, Map<String, double>> ventasPorSucursalYFormaPago = {};
+  String selectedSumType = 'venta_neta';
+  String? selectedName;
+  String empresa = '';
+  String nombreUsuario = '';
+  String rolUsuario = '';
+  String empresaSiglas = '';
+  String prueba = 've';
+  String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
   @override
   void initState() {
     super.initState();
+    obtenerNombreUsuario();
+    obtenerRolUsuario();
     obtenerNombreEmpresa();
-    obtenerNombreUsuario().then((_) {
-      if (nombreUsuario.isNotEmpty) {
-        obtenerDatos().then((data) {
-          setState(() {
-            datosC1 = data;
-            reorganizarDatos();
-            calcularTotalesPorFormaDePago();
-            calcularTotalesGeneral();
-            obtenerSucursales();
-          });
-        });
-      } else {
-        mostrarError('Nombre de usuario no cargado.');
-      }
-    });
-  }
-
-  // Función para obtener el nombre del usuario
-  Future<void> obtenerNombreUsuario() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      nombreUsuario = prefs.getString('Nombre') ?? '';
-    });
-  }
-
-  // Función para obtener el nombre de la empresa
-  Future<void> obtenerNombreEmpresa() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      nombreEmpresa = prefs.getString('nombre_empresa') ?? '';
+    obtenerSiglasEmpresa();
+    obtenerDatos().then((data) {
+      setState(() {
+        datosC1 = data;
+        obtenerTotalVentasPorSucursalYFormaPago();
+      });
+    }).catchError((error) {
+      mostrarError('Error al cargar los datos: $error');
     });
   }
 
@@ -78,7 +56,7 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
     });
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_detalle_forma_pago&attributes=%7B%22DATOS%22:%7B%22uactivo%22:%22$nombreUsuario%22,%22fini%22:%222024-04-18%22,%22ffin%22:%222024-04-19%22%7D%7D&format=JSON&isFront=true';
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$prueba?stored_name=rep_venta_detalle_forma_pago&attributes=%7B%22DATOS%22:%7B%22uactivo%22:%22$nombreUsuario%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
 
     try {
       final response = await Dio().get(url);
@@ -87,14 +65,11 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
         final List<dynamic> c1Data = data['RESPUESTA']['C1'];
         return List<Map<String, dynamic>>.from(c1Data);
       } else {
-        mostrarError(
-            'Error al obtener los datos del JSON. Código de estado: ${response.statusCode}');
-        return [];
+        throw 'Error al obtener los datos del JSON. Código de estado: ${response.statusCode}';
       }
     } catch (e) {
       print('Error: $e');
-      mostrarError('Error al cargar los datos.');
-      return [];
+      throw 'Error al cargar los datos.';
     } finally {
       setState(() => loading = false);
     }
@@ -106,107 +81,97 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
     );
   }
 
-  void reorganizarDatos() {
-    sucursalesData.clear();
-    for (var dato in datosC1) {
-      final ubicacion = dato['ubicacion'];
-      final nombre = dato['nombre'];
-      final descFp = dato['desc_fp'];
-      final venta = double.tryParse(dato['venta'] ?? '0') ?? 0.0;
-      final ventaNeta = double.tryParse(dato['venta_neta'] ?? '0.0') ?? 0.0;
-      // ignore: unused_local_variable
-      final ticket = dato['ticket'];
+  void obtenerTotalVentasPorSucursalYFormaPago() {
+    // Limpiar datos existentes al cambiar la forma de sumatoria seleccionada
+    ventasPorSucursalYFormaPago.clear();
+    nombres.clear();
 
-      final key = '$ubicacion-$nombre';
-      sucursalesData.putIfAbsent(
-          key,
-          () => {
-                'ubicacion': ubicacion,
-                'nombre': nombre,
-                'EFECTIVO_VENTA': 0.0,
-                'EFECTIVO_VENTA_NETA': 0.0,
-                'TDC_VENTA': 0.0,
-                'TDC_VENTA_NETA': 0.0,
-                'TDD_VENTA': 0.0,
-                'TDD_VENTA_NETA': 0.0,
-                'TICKET_TOTAL': 0,
-              });
+    // Filtrar los datos por el nombre de la sucursal seleccionada
+    List<Map<String, dynamic>> datosFiltrados = selectedName != null
+        ? datosC1.where((item) => item['nombre'] == selectedName).toList()
+        : datosC1;
 
-      if (descFp.trim() == 'EFECTIVO') {
-        sucursalesData[key]?['EFECTIVO_VENTA'] += venta;
-        sucursalesData[key]?['EFECTIVO_VENTA_NETA'] += ventaNeta;
-      } else if (descFp.trim() == 'TDD') {
-        sucursalesData[key]?['TDD_VENTA'] += venta;
-        sucursalesData[key]?['TDD_VENTA_NETA'] += ventaNeta;
-      } else if (descFp.trim() == 'TDC') {
-        sucursalesData[key]?['TDC_VENTA'] += venta;
-        sucursalesData[key]?['TDC_VENTA_NETA'] += ventaNeta;
-      }
+    for (var item in datosFiltrados) {
+      String ubicacion = item['ubicacion'] as String;
+      String nombre = item['nombre'] as String;
+      String formaPago = item['desc_fp'] as String;
+      double venta = selectedSumType == 'venta_neta'
+          ? double.parse(item['venta_neta'] as String)
+          : double.parse(item['venta'] as String);
 
-      sucursalesData[key]?['TICKET_TOTAL']++;
-    }
-  }
+      ventasPorSucursalYFormaPago[ubicacion] ??= {};
+      ventasPorSucursalYFormaPago[ubicacion]![formaPago] ??= 0.0;
+      ventasPorSucursalYFormaPago[ubicacion]![formaPago] =
+          (ventasPorSucursalYFormaPago[ubicacion]![formaPago] ?? 0.0) + venta;
 
-  void calcularTotalesPorFormaDePago() {
-    for (var key in sucursalesData.keys) {
-      final data = sucursalesData[key];
-      final efectivoVenta = data?['EFECTIVO_VENTA'];
-      final efectivoVentaNeta = data?['EFECTIVO_VENTA_NETA'];
-      final tdcVenta = data?['TDC_VENTA'];
-      final tdcVentaNeta = data?['TDC_VENTA_NETA'];
-      final tddVenta = data?['TDD_VENTA'];
-      final tddVentaNeta = data?['TDD_VENTA_NETA'];
-
-      print(
-          'Ubicación: ${data?['ubicacion']}, Nombre: ${data?['nombre']}, EFECTIVO_VENTA: $efectivoVenta, EFECTIVO_VENTA NETA: $efectivoVentaNeta, TDC_VENTA: $tdcVenta, TDC_VENTA NETA: $tdcVentaNeta, TDD_VENTA: $tddVenta, TDD_VENTA NETA: $tddVentaNeta');
-    }
-  }
-
-  void calcularTotalesGeneral() {
-    totalEfectivoVenta = 0.0;
-    totalEfectivoVentaNeta = 0.0;
-    totalTdcVenta = 0.0;
-    totalTdcVentaNeta = 0.0;
-    totalTddVenta = 0.0;
-    totalTddVentaNeta = 0.0;
-    totalTickets = 0;
-
-    for (var key in sucursalesData.keys) {
-      final data = sucursalesData[key];
-      totalEfectivoVenta += data?['EFECTIVO_VENTA'] ?? 0.0;
-      totalEfectivoVentaNeta += data?['EFECTIVO_VENTA_NETA'] ?? 0.0;
-      totalTdcVenta += data?['TDC_VENTA'] ?? 0.0;
-      totalTdcVentaNeta += data?['TDC_VENTA_NETA'] ?? 0.0;
-      totalTddVenta += data?['TDD_VENTA'] ?? 0.0;
-      totalTddVentaNeta += data?['TDD_VENTA_NETA'] ?? 0.0;
-      totalTickets += data?['TICKET_TOTAL'] ?? 0;
-    }
-
-    print('Totales generales:');
-    print('EFECTIVO_VENTA: $totalEfectivoVenta');
-    print('EFECTIVO_VENTA NETA: $totalEfectivoVentaNeta');
-    print('TDC_VENTA: $totalTdcVenta');
-    print('TDC_VENTA NETA: $totalTdcVentaNeta');
-    print('TDD_VENTA: $totalTddVenta');
-    print('TDD_VENTA NETA: $totalTddVentaNeta');
-    print('TICKET_TOTAL: $totalTickets');
-  }
-
-  void obtenerSucursales() {
-    for (var dato in datosC1) {
-      final nombreSucursal = dato['nombre'] as String;
-      if (!sucursales.contains(nombreSucursal)) {
-        sucursales.add(nombreSucursal);
+      if (!nombres.contains(nombre)) {
+        nombres.add(nombre);
       }
     }
+  }
+
+  Map<String, double> totalVentaGeneral() {
+    Map<String, double> totalVentas = {};
+
+    formasDePago.forEach((formaPago) {
+      double total = 0.0;
+      ventasPorSucursalYFormaPago.values.forEach((sucursalVentas) {
+        if (sucursalVentas.containsKey(formaPago)) {
+          total += sucursalVentas[formaPago]!;
+        }
+      });
+      totalVentas[formaPago] = total;
+    });
+
+    return totalVentas;
+  }
+
+  double calcularVentaTotalNetaGeneral() {
+    double total = 0.0;
+
+    // Iterar sobre todas las ventas por ubicación y forma de pago
+    ventasPorSucursalYFormaPago.values.forEach((sucursalVentas) {
+      sucursalVentas.values.forEach((venta) {
+        total += venta;
+      });
+    });
+
+    return total;
+  }
+
+  Future<void> obtenerNombreEmpresa() async {
+    String nombreEmpresa = await MenuHelper.obtenerNombreEmpresa();
     setState(() {
-      selectedSucursal = 'Sucursal';
+      empresa = nombreEmpresa;
+    });
+  }
+
+  Future<void> obtenerNombreUsuario() async {
+    String nombre = await MenuHelper.obtenerNombreUsuario();
+    setState(() {
+      nombreUsuario = nombre;
+    });
+  }
+
+  Future<void> obtenerRolUsuario() async {
+    String rol = await MenuHelper.obtenerRolUsuario();
+    setState(() {
+      rolUsuario = rol;
+    });
+  }
+
+  Future<void> obtenerSiglasEmpresa() async {
+    String siglas = await MenuHelper.obtenersiglasEmpresa();
+    setState(() {
+      empresaSiglas = siglas;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     String currentMonth = DateFormat('MMMM', 'es_MX').format(DateTime.now());
+    formasDePago =
+        datosC1.map((item) => item['desc_fp'] as String).toSet().toList();
 
     return Scaffold(
       endDrawer: Drawer(
@@ -221,7 +186,7 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
                   const SizedBox(height: 25),
                   InfoCard(
                     name: nombreUsuario,
-                    profession: nombreEmpresa,
+                    profession: empresa,
                   ),
                 ],
               ),
@@ -229,35 +194,78 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
             Expanded(
               child: Container(
                 color: const Color.fromRGBO(46, 48, 53, 1),
-                child: SingleChildScrollView(
-                  child: ExpansionTile(
-                    title: const Text(
-                      'Sucursal',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    children: [
-                      ...sucursales.map((sucursal) {
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                            setState(() {
-                              selectedSucursal = sucursal;
-                              calcularTotalesGeneral();
-                            });
-                          },
-                          child: Container(
-                            color: Colors.black26,
-                            child: ListTile(
-                              title: Text(
-                                sucursal,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ),
+                child: ListView(
+                  children: [
+                    ExpansionTile(
+                      title: const Text(
+                        'Seleccionar Sucursal',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      children: [
+                        ListTile(
+                          title: const Text(
+                            'Todas',
+                            style: TextStyle(color: Colors.white),
                           ),
-                        );
-                      }).toList(),
-                    ],
-                  ),
+                          onTap: () {
+                            setState(() {
+                              selectedName = null;
+                              obtenerTotalVentasPorSucursalYFormaPago();
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                        for (var nombre in nombres)
+                          ListTile(
+                            title: Text(
+                              nombre,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            onTap: () {
+                              Navigator.pop(context);
+                              setState(() {
+                                selectedName = nombre;
+                                obtenerTotalVentasPorSucursalYFormaPago();
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                    ExpansionTile(
+                      title: const Text(
+                        'Tipos venta',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      children: [
+                        ListTile(
+                          title: const Text(
+                            'Venta Neta',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              selectedSumType = 'venta_neta';
+                              obtenerTotalVentasPorSucursalYFormaPago();
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          title: const Text(
+                            'Venta',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              selectedSumType = 'venta';
+                              obtenerTotalVentasPorSucursalYFormaPago();
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -301,9 +309,7 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
                         ),
                       ),
                       Text(
-                        ' \$${NumberFormat(
-                          "#,##0.00",
-                        ).format(totalEfectivoVentaNeta)}',
+                        '\$${NumberFormat("#,##0.00").format(calcularVentaTotalNetaGeneral())}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 25,
@@ -320,10 +326,8 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
                           padding: const EdgeInsets.all(
                               16.0), // Ajusta según necesites
                           child: GreaficaDePastel(
-                            totalEfectivoVenta: totalEfectivoVentaNeta,
-                            totalTdcVenta: totalTdcVentaNeta,
-                            totalTddVenta: totalTddVentaNeta,
-                            totalTickets: totalTickets,
+                            totalVentaGeneral: totalVentaGeneral(),
+                            formasDePago: formasDePago,
                           ),
                         ),
                       ),
@@ -335,60 +339,47 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
                           child: SingleChildScrollView(
                             scrollDirection: Axis.vertical,
                             child: CustomDataTable(
-                              columns: const [
-                                DataColumn(label: Text('Ubicación')),
-                                DataColumn(label: Text('Nombre')),
-                                //DataColumn(label: Text('Efectivo Venta')),
-                                DataColumn(label: Text('Efectivo')),
-                                //DataColumn(label: Text('TDC Venta')),
-                                DataColumn(label: Text('TDC')),
-                                //DataColumn(label: Text('TDD Venta')),
-                                DataColumn(label: Text('TDD')),
-                                DataColumn(label: Text('TICKET')),
+                              columns: [
+                                const DataColumn(label: Text('Ubicacion')),
+                                const DataColumn(label: Text('Nombre')),
+                                for (var formaPago in formasDePago)
+                                  DataColumn(label: Text(formaPago)),
                               ],
-                              rows: sucursalesData.values.map<DataRow>((data) {
-                                return DataRow(cells: [
-                                  DataCell(Text(data['ubicacion'] ?? '')),
-                                  DataCell(Text(data['nombre'] ?? '')),
-                                  //DataCell(Text(NumberFormat("#,##0.00").format(data['EFECTIVO_VENTA']))),
-                                  DataCell(Text(NumberFormat("#,##0.00")
-                                      .format(data['EFECTIVO_VENTA_NETA']))),
-                                  //DataCell(Text(NumberFormat("#,##0.00") .format(data['TDC_VENTA']))),
-                                  DataCell(Text(NumberFormat("#,##0.00")
-                                      .format(data['TDC_VENTA_NETA']))),
-                                  //DataCell(Text(NumberFormat("#,##0.00").format(data['TDD_VENTA']))),
-                                  DataCell(Text(NumberFormat("#,##0.00")
-                                      .format(data['TDD_VENTA_NETA']))),
-                                  DataCell(
-                                      Text(data['TICKET_TOTAL'].toString())),
-                                ]);
-                              }).toList(),
+                              rows: ventasPorSucursalYFormaPago.entries
+                                  .map((entry) => DataRow(cells: [
+                                        DataCell(Text(entry.key)), // Ubicación
+                                        DataCell(Text(nombres.firstWhere(
+                                            (nombre) => datosC1.any((item) =>
+                                                item['ubicacion'] ==
+                                                    entry.key &&
+                                                item['nombre'] == nombre)))),
+                                        for (var formaPago in formasDePago)
+                                          DataCell(Text(
+                                            '${entry.value[formaPago] != null ? NumberFormat("#,##0.00").format(entry.value[formaPago]!) : "0.00"}',
+                                          )),
+                                      ]))
+                                  .toList(),
                               footerRows: [
                                 DataRow(cells: [
-                                  const DataCell(Text(
-                                    '',
-                                  )),
-                                  const DataCell(Text('Totales',
+                                  const DataCell(
+                                    Text(''),
+                                  ),
+                                  const DataCell(
+                                    Text(
+                                      'Total',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat("#,##0.00")
-                                          .format(totalEfectivoVentaNeta),
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat("#,##0.00")
-                                          .format(totalTdcVentaNeta),
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat("#,##0.00")
-                                          .format(totalTddVentaNeta),
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(totalTickets.toStringAsFixed(0),
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  for (var formaPago in formasDePago)
+                                    DataCell(
+                                      Text(
+                                        // ignore: unnecessary_string_interpolations
+                                        '${totalVentaGeneral()[formaPago] != null ? NumberFormat("#,##0.00").format(totalVentaGeneral()[formaPago]!) : "0.00"}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
                                 ]),
                               ],
                             ),

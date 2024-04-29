@@ -38,6 +38,19 @@ class MenuHelper {
     }
   }
 
+  // Función para obtener el rol del usuario de SharedPreferences
+  static Future<String> obtenerRolUsuario() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? rol = prefs.getString('rol');
+    return rol ?? ''; // Devuelve el rol o una cadena vacía si no se encuentra
+  }
+
+  static Future<String> obtenerNombreEmpresa() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? nombreEmpresa = prefs.getString('nombreEmpresa');
+    return nombreEmpresa ?? 'Nombre de la Empresa';
+  }
+
   // Función para restablecer el color después de un retraso
   static void resetColorAfterDelay(BuildContext context,
       Map<String, dynamic> item, Map<String, Color> itemColors) {
@@ -59,5 +72,11 @@ class MenuHelper {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? nombre = prefs.getString('Nombre');
     return nombre ?? 'Usuario';
+  }
+
+  static Future<String> obtenersiglasEmpresa() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? empresaSiglas = prefs.getString('empresa');
+    return empresaSiglas ?? 'empresaSiglas';
   }
 }

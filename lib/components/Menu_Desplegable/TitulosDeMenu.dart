@@ -14,3 +14,17 @@ class MenuDataProvider {
     return sideMenus;
   }
 }
+
+class MenuDataProviderUsuario {
+  static final List<Map<String, dynamic>> sideMenusUsuario = [
+    {'title': 'Menú', 'icon': Icons.home},
+    {'title': 'Reportes', 'icon': Icons.pending_actions_rounded},
+    {'title': 'Prenomina', 'icon': Icons.search},
+    {'title': 'Cerrar Sesión', 'icon': Icons.logout},
+    {'title': 'Regresar', 'icon': Icons.arrow_back},
+  ];
+
+  static List<Map<String, dynamic>> getSideMenusUsuario() {
+    return sideMenusUsuario;
+  }
+}

@@ -9,9 +9,7 @@ import 'package:flutter_proyect/models/prenomina/prenomina.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WelcomeInfo extends StatelessWidget {
-  final String companyName;
-
-  const WelcomeInfo({super.key, required this.companyName});
+  const WelcomeInfo({super.key});
 
   Future<String?> obtenerCompanyName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -24,19 +22,7 @@ class WelcomeInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 10),
-        CustomButton(
-          title: 'Pruebas',
-          imagePath: 'assets/images/prueba.png',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const Prueba2(),
-              ),
-            );
-          },
-          additionalText: 'Testeo de pruebas',
-        ),
+
         const SizedBox(height: 10),
         CustomButton(
           title: 'Ventas',
@@ -45,7 +31,7 @@ class WelcomeInfo extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ReportesMain(companyName: ''),
+                builder: (context) => ReportesMain(),
               ),
             );
           },
@@ -68,8 +54,7 @@ class WelcomeInfo extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          Prenomina(companyName: snapshot.data!),
+                      builder: (context) => Prenomina(),
                     ),
                   );
                 },
@@ -83,7 +68,7 @@ class WelcomeInfo extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const Prenomina(companyName: ''),
+                      builder: (context) => const Prenomina(),
                     ),
                   );
                 },

@@ -16,7 +16,7 @@ class VentaConsilidada extends StatefulWidget {
 }
 
 class _VentaConsilidadaState extends State<VentaConsilidada> {
-  String nombreEmpresa = '';
+  String empresa = '';
   String nombre = '';
   Map<String, double> ventaNetaPorSucursal = {};
 
@@ -57,7 +57,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
   Future<void> obtenerNombreEmpresa() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      nombreEmpresa = prefs.getString('nombre_empresa') ?? '';
+      empresa = prefs.getString('nombreEmpresa') ?? '';
     });
   }
 
@@ -245,7 +245,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                   const SizedBox(height: 25),
                   InfoCard(
                     name: nombre,
-                    profession: nombreEmpresa,
+                    profession: empresa,
                   ),
                 ],
               ),

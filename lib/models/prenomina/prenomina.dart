@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/appbar/appbar.dart';
-import 'package:flutter_proyect/src/Menu_Principal/Menu_Desplegable/Menu_Lateral.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
 
 class Prenomina extends StatefulWidget {
-  final String companyName;
-  const Prenomina({super.key, required this.companyName});
+  const Prenomina({super.key});
 
   @override
   State<Prenomina> createState() => _PrenominaState();
@@ -14,9 +13,9 @@ class _PrenominaState extends State<Prenomina> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: Menu_Lateral(companyName: widget.companyName),
+      drawer: Menu_Lateral(),
       appBar: CustomAppBar(
-        titleText: widget.companyName,
+        titleText: '',
       ),
       body: Container(
         color: Colors.white, // Color de fondo blanco
