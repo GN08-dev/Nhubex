@@ -27,23 +27,25 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
   String nombreUsuario = '';
   String rolUsuario = '';
   String empresaSiglas = '';
-  String prueba = 've';
-  String fecha =
-      '2024-04-25'; //DateFormat('yyyy-MM-dd').format(DateTime.now());
+  String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
   @override
   void initState() {
     super.initState();
     obtenerNombreUsuario();
     obtenerRolUsuario();
     obtenerNombreEmpresa();
-    obtenerSiglasEmpresa();
-    obtenerDatos().then((data) {
-      setState(() {
-        datosC1 = data;
-        obtenerTotalVentasPorSucursalYFormaPago();
+    obtenerSiglasEmpresa().then((_) {
+      // Llamamos a obtenerDatos() después de obtener las siglas de la empresa
+      obtenerDatos().then((data) {
+        setState(() {
+          datosC1 = data;
+          obtenerTotalVentasPorSucursalYFormaPago();
+        });
+      }).catchError((error) {
+        mostrarError('Error al cargar los datos: $error');
       });
     }).catchError((error) {
-      mostrarError('Error al cargar los datos: $error');
+      mostrarError('Error al obtener las siglas de la empresa: $error');
     });
   }
 
@@ -53,7 +55,7 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
     });
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_consolidada_forma_pago&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombreUsuario%22,%22fini%22:%222024-04-18%22,%22ffin%22:%222024-04-19%22%7D%7D&format=JSON&isFront=true';
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_consolidada_forma_pago&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombreUsuario%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
 
     try {
       final response = await Dio().get(url);

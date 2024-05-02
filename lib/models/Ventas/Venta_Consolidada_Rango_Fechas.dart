@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.dart';
 import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -18,6 +19,9 @@ class VentaConsilidada extends StatefulWidget {
 class _VentaConsilidadaState extends State<VentaConsilidada> {
   String empresa = '';
   String nombre = '';
+  String rolUsuario = '';
+  String empresaSiglas = '';
+  String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
   Map<String, double> ventaNetaPorSucursal = {};
 
   bool loading = false;
@@ -38,7 +42,10 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
     obtenerNombreEmpresa();
     obtenerNombreUsuario().then((_) {
       if (nombre.isNotEmpty) {
-        obtenerDatos();
+        obtenerSiglasEmpresa().then((_) {
+          // Llamamos a obtenerDatos() después de obtener las siglas de la empresa
+          obtenerDatos();
+        });
       } else {
         mostrarError('Nombre de usuario no cargado.');
       }
@@ -53,11 +60,24 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
     print('Nombre cargado de SharedPreferences: $nombre');
   }
 
-  // Función para obtener el nombre de la empresa
   Future<void> obtenerNombreEmpresa() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String nombreEmpresa = await MenuHelper.obtenerNombreEmpresa();
     setState(() {
-      empresa = prefs.getString('nombreEmpresa') ?? '';
+      empresa = nombreEmpresa;
+    });
+  }
+
+  Future<void> obtenerRolUsuario() async {
+    String rol = await MenuHelper.obtenerRolUsuario();
+    setState(() {
+      rolUsuario = rol;
+    });
+  }
+
+  Future<void> obtenerSiglasEmpresa() async {
+    String siglas = await MenuHelper.obtenersiglasEmpresa();
+    setState(() {
+      empresaSiglas = siglas;
     });
   }
 
@@ -67,9 +87,10 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
     });
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_consolidada&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%222024-04-19%22,%22ffin%22:%222024-04-20%22%7D%7D&format=JSON&isFront=true';
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_consolidada&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
     try {
       final response = await Dio().get(url);
+      print('URL: $url');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.data);
@@ -102,12 +123,15 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
           }
         });
       } else {
+        print('URL: $url');
+
         mostrarError(
             'Error al obtener los datos. Código de estado: ${response.statusCode}');
       }
     } catch (e) {
       print('Error: $e');
       mostrarError('Error al cargar datos');
+      print('URL: $url');
     } finally {
       setState(() {
         loading = false;
@@ -245,7 +269,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                   const SizedBox(height: 25),
                   InfoCard(
                     name: nombre,
-                    profession: empresa,
+                    profession: empresaSiglas,
                   ),
                 ],
               ),

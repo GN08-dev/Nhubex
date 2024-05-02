@@ -22,6 +22,8 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
   String nombre = '';
   String rolUsuario = '';
   String empresaSiglas = '';
+  String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
   bool loading = false;
 
   double sumaVentaNetaTotal = 0.0;
@@ -49,9 +51,12 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
     obtenerNombreEmpresa();
     obtenerNombreUsuario().then((_) {
       if (nombre.isNotEmpty) {
-        obtenerDatos().then((data) {
-          setState(() {
-            datosC1 = data;
+        obtenerSiglasEmpresa().then((_) {
+          // Esperar a obtener las siglas antes de obtener los datos
+          obtenerDatos().then((data) {
+            setState(() {
+              datosC1 = data;
+            });
           });
         });
       } else {
@@ -96,7 +101,7 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
     });
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_ticket_consolidado&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%222024-04-18%22,%22ffin%22:%222024-04-19%22%7D%7D&format=JSON&isFront=true';
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_ticket_consolidado&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%222024-04-18%22,%22ffin%22:%222024-04-19%22%7D%7D&format=JSON&isFront=true';
 
     try {
       final response = await Dio().get(url);
@@ -132,12 +137,14 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
 
         return datos;
       } else {
+        print('URL: $url');
+
         mostrarError(
             'Error al obtener los datos del JSON. Código de estado: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('Error: $e');
+      print('URL: $url');
       mostrarError('Error al cargar los datos.');
       return [];
     } finally {
@@ -439,11 +446,7 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
                                 ),
                               ),
                               DataCell(
-                                Text(
-                                  formatNumber(calcularTotal('tickets')),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
+                                Text(''),
                               ),
                             ])
                           ],

@@ -30,7 +30,7 @@ class _MyAppFormState extends State<MyAppForm> {
 
     empresaController.addListener(actualizarImagen);
 
-    WidgetsBinding.instance?.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final datosUsuario = await obtenerDatosUsuario();
       if (datosUsuario['nombre'] != null) {
         // Redirigir según el rol

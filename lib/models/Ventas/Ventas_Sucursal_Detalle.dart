@@ -21,6 +21,7 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
   String nombre = '';
   String rolUsuario = '';
   String empresaSiglas = '';
+  String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
   bool loading = false;
   List<Map<String, dynamic>> datosC1 = [];
@@ -43,16 +44,20 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
   @override
   void initState() {
     super.initState();
-    obtenerNombreEmpresa();
     obtenerNombreUsuario().then((_) {
       if (nombre.isNotEmpty) {
-        obtenerDatos().then((data) {
-          setState(() {
-            datosC1 = data;
-            calcularEstadisticas();
-            calcularVentaNetaPorSucursal();
-            actualizarListaSucursales();
+        obtenerNombreEmpresa();
+        obtenerSiglasEmpresa().then((_) {
+          obtenerDatos().then((data) {
+            setState(() {
+              datosC1 = data;
+              calcularEstadisticas();
+              calcularVentaNetaPorSucursal();
+              actualizarListaSucursales();
+            });
           });
+        }).catchError((error) {
+          mostrarError('Error al obtener las siglas de la empresa: $error');
         });
       } else {
         mostrarError('Nombre de usuario no cargado.');
@@ -96,7 +101,7 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
     });
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_Sucursal_Detalle&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%222024-04-18%22,%22ffin%22:%222024-04-18%22%7D%7D&format=JSON&isFront=true';
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_Sucursal_Detalle&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
 
     try {
       final response = await Dio().get(url);

@@ -33,6 +33,17 @@ class SalesBarChart extends StatelessWidget {
       maxYLabelWidth = max(maxYLabelWidth, textPainter.width);
     }
 
+    // Calcular el número de dígitos en el número más grande
+    int maxDigits = 1;
+    int maxNumber = yValues.map((value) => value.toInt()).reduce(max);
+    while (maxNumber >= 10) {
+      maxNumber ~/= 10;
+      maxDigits++;
+    }
+
+    // Ajustar el tamaño del espacio reservado para las etiquetas del eje Y
+    double reservedSize = maxDigits * 8.0; // Ajustar según sea necesario
+
     return BarChart(
       BarChartData(
         barGroups: seriesList,
@@ -70,8 +81,8 @@ class SalesBarChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              // Reducir el espacio reservado para las etiquetas del eje Y
-              reservedSize: maxYLabelWidth + 1,
+              reservedSize:
+                  reservedSize, // Ajuste dinámico del tamaño reservado
               getTitlesWidget: (value, meta) {
                 // Función para formatear valores en miles
                 String formatValue(double value) {
@@ -87,15 +98,18 @@ class SalesBarChart extends StatelessWidget {
                   return roundedValue.toStringAsFixed(0);
                 }
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: 0),
-                  child: Text(
-                    formatValue(value),
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
+                return SizedBox(
+                  height: 20, // Ajustar el alto según sea necesario
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 0),
+                    child: Text(
+                      formatValue(value),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.end,
                     ),
-                    textAlign: TextAlign.end,
                   ),
                 );
               },
