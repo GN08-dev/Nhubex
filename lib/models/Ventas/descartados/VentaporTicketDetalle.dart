@@ -273,8 +273,6 @@ class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
                             Navigator.pop(context);
                             setState(() {
                               selectedSucursal = sucursal;
-                              // calcularTotalventas(); // Reemplazar con el método correcto si es necesario
-                              // Cerrar el ExpansionTile
                             });
                           },
                           child: Container(
@@ -338,63 +336,67 @@ class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
                       ),
                     ),
                     const SizedBox(height: 50),
-                    SizedBox(
-                      height: 300, // Altura deseada
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: SalesBarChart(
-                          convertirDatosAVentasBarChart(filtrarDatosPorSucursal(
-                              datosC1, selectedSucursal)),
-                          obtenerUbicacionesUnicas(filtrarDatosPorSucursal(
-                              datosC1, selectedSucursal)),
-                        ),
+                    Container(
+                      height: 300,
+                      child: SalesBarChart(
+                        convertirDatosAVentasBarChart(
+                            filtrarDatosPorSucursal(datosC1, selectedSucursal)),
+                        obtenerUbicacionesUnicas(
+                            filtrarDatosPorSucursal(datosC1, selectedSucursal)),
                       ),
                     ),
-                    Padding(
+                    Container(
+                      height: 320,
                       padding: const EdgeInsets.all(16.0),
                       child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: CustomDataTable(
-                          columns: const [
-                            DataColumn(label: Text('Ubicación')),
-                            DataColumn(label: Text('Sucursal')),
-                            DataColumn(label: Text('Ticket')),
-                            DataColumn(label: Text('Código de Barras')),
-                            DataColumn(label: Text('Piezas')),
-                            DataColumn(label: Text('Precio Unitario')),
-                            DataColumn(label: Text('Precio Total')),
-                            DataColumn(label: Text('Impuestos')),
-                            DataColumn(label: Text('Subtotal')),
-                            DataColumn(label: Text('Venta')),
-                            DataColumn(label: Text('Venta Neta')),
-                            DataColumn(label: Text('Factura')),
-                            DataColumn(label: Text('Costo')),
-                            DataColumn(label: Text('Vendedor')),
-                          ],
-                          rows: getDatosPagina(paginaActual)
-                              .map((datos) => DataRow(
-                                    cells: [
-                                      DataCell(Text(datos['ubicacion'] ?? '')),
-                                      DataCell(Text(datos['nombre'] ?? '')),
-                                      DataCell(Text(datos['Ticket'] ?? '')),
-                                      DataCell(
-                                          Text(datos['CODIGOBARRAS'] ?? '')),
-                                      DataCell(Text(datos['Piezas'] ?? '')),
-                                      DataCell(
-                                          Text(datos['PRECIO_UNIT'] ?? '')),
-                                      DataCell(
-                                          Text(datos['PRECIO_TOTAL'] ?? '')),
-                                      DataCell(Text(datos['Impuestos'] ?? '')),
-                                      DataCell(Text(datos['SUBTOTAL'] ?? '')),
-                                      DataCell(Text(datos['Venta'] ?? '')),
-                                      DataCell(Text(datos['Venta_Neta'] ?? '')),
-                                      DataCell(Text(datos['Factura'] ?? '')),
-                                      DataCell(Text(datos['costo'] ?? '')),
-                                      DataCell(Text(datos['Vendedor'] ?? '')),
-                                    ],
-                                  ))
-                              .toList(),
-                          footerRows: [],
+                        scrollDirection: Axis.vertical,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: CustomDataTable(
+                            columns: const [
+                              DataColumn(label: Text('Ubicación')),
+                              DataColumn(label: Text('Sucursal')),
+                              DataColumn(label: Text('Ticket')),
+                              DataColumn(label: Text('Código de Barras')),
+                              DataColumn(label: Text('Piezas')),
+                              DataColumn(label: Text('Precio Unitario')),
+                              DataColumn(label: Text('Precio Total')),
+                              DataColumn(label: Text('Impuestos')),
+                              DataColumn(label: Text('Subtotal')),
+                              DataColumn(label: Text('Venta')),
+                              DataColumn(label: Text('Venta Neta')),
+                              DataColumn(label: Text('Factura')),
+                              DataColumn(label: Text('Costo')),
+                              DataColumn(label: Text('Vendedor')),
+                            ],
+                            rows: getDatosPagina(paginaActual)
+                                .map((datos) => DataRow(
+                                      cells: [
+                                        DataCell(
+                                            Text(datos['ubicacion'] ?? '')),
+                                        DataCell(Text(datos['nombre'] ?? '')),
+                                        DataCell(Text(datos['Ticket'] ?? '')),
+                                        DataCell(
+                                            Text(datos['CODIGOBARRAS'] ?? '')),
+                                        DataCell(Text(datos['Piezas'] ?? '')),
+                                        DataCell(
+                                            Text(datos['PRECIO_UNIT'] ?? '')),
+                                        DataCell(
+                                            Text(datos['PRECIO_TOTAL'] ?? '')),
+                                        DataCell(
+                                            Text(datos['Impuestos'] ?? '')),
+                                        DataCell(Text(datos['SUBTOTAL'] ?? '')),
+                                        DataCell(Text(datos['Venta'] ?? '')),
+                                        DataCell(
+                                            Text(datos['Venta_Neta'] ?? '')),
+                                        DataCell(Text(datos['Factura'] ?? '')),
+                                        DataCell(Text(datos['costo'] ?? '')),
+                                        DataCell(Text(datos['Vendedor'] ?? '')),
+                                      ],
+                                    ))
+                                .toList(),
+                            footerRows: [],
+                          ),
                         ),
                       ),
                     ),

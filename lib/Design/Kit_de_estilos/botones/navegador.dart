@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_proyect/models/Registro/Resgistro.dart';
+import 'package:flutter_proyect/models/Registro/Registro.dart';
 import 'package:flutter_proyect/models/Ventas/Venta_Consolidada_Rango_Fechas.dart';
 import 'package:flutter_proyect/models/Ventas/Venta_Forma_Pago_Consolidada.dart';
-import 'package:flutter_proyect/models/Ventas/Venta_Forma_Pago_Detalle.dart';
+import 'package:flutter_proyect/models/Ventas/descartados/Venta_Forma_Pago_Detalle.dart';
 import 'package:flutter_proyect/models/Ventas/Venta_Ticket_Consolidado.dart';
-import 'package:flutter_proyect/models/Ventas/Ventas_Diario.dart';
-import 'package:flutter_proyect/models/Ventas/VentaporTicketDetalle.dart';
+import 'package:flutter_proyect/models/Ventas/descartados/Ventas_Diario.dart';
+import 'package:flutter_proyect/models/Ventas/descartados/VentaporTicketDetalle.dart';
 import 'package:flutter_proyect/models/Ventas/Ventas_Sucursal_Detalle.dart';
 
 class Reportes {
@@ -51,12 +51,12 @@ class Reportes {
         context,
         MaterialPageRoute(builder: (_) => const Ventas()),
       );
-    } else if (item['title'] == 'Venta por Ticket (Consolidado)') {
+    } else if (item['title'] == 'Venta por Ticket') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const VentaTicketConsolidado()),
       );
-    } else if (item['title'] == 'Venta por Forma de Pago (Consolidada)') {
+    } else if (item['title'] == 'Venta por Forma de Pago') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const VentaFormaPagoConsolidada()),
@@ -66,7 +66,7 @@ class Reportes {
         context,
         MaterialPageRoute(builder: (_) => const Ventaporticketdetalle()), //miau
       );
-    } else if (item['title'] == 'Venta por Sucursal Detalle') {
+    } else if (item['title'] == 'Venta por Sucursal') {
       Navigator.push(
         context,
         MaterialPageRoute(

@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/botones/custom_button.dart';
-import 'package:flutter_proyect/Pruebas/prueba2.dart';
-import 'package:flutter_proyect/Pruebas/test.dart';
+
 import 'package:flutter_proyect/models/Reportes/Reportes.dart';
 import 'package:flutter_proyect/models/prenomina/prenomina.dart';
+// ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WelcomeInfo extends StatelessWidget {
@@ -40,7 +40,7 @@ class WelcomeInfo extends StatelessWidget {
         ),
 
         ///un botton
-        const SizedBox(height: 10),
+        /* const SizedBox(height: 10),
         FutureBuilder<String?>(
           future: obtenerCompanyName(),
           builder: (context, snapshot) {
@@ -76,7 +76,7 @@ class WelcomeInfo extends StatelessWidget {
               );
             }
           },
-        ),
+        ),*/
       ],
     );
   }

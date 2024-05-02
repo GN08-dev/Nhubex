@@ -6,7 +6,8 @@ class SalesBarChart extends StatelessWidget {
   final List<BarChartGroupData> seriesList;
   final List<String> xTitles;
 
-  const SalesBarChart(this.seriesList, this.xTitles, {super.key});
+  const SalesBarChart(this.seriesList, this.xTitles, {Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -69,8 +70,8 @@ class SalesBarChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize:
-                  maxYLabelWidth + 16, // Agrega más espacio entre etiquetas
+              // Reducir el espacio reservado para las etiquetas del eje Y
+              reservedSize: maxYLabelWidth + 1,
               getTitlesWidget: (value, meta) {
                 // Función para formatear valores en miles
                 String formatValue(double value) {

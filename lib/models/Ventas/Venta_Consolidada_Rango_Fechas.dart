@@ -344,14 +344,17 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                     columns: const [
                                       DataColumn(label: Text('Ubicacion')),
                                       DataColumn(label: Text('Nombre')),
-                                      DataColumn(label: Text('Venta')),
+                                      DataColumn(label: Text('Venta Neta')),
                                       DataColumn(label: Text('Devolucion')),
                                       DataColumn(
                                           label:
                                               Text('Ventas Menos devolucion')),
-                                      DataColumn(label: Text('Venta Neta')),
+                                      DataColumn(
+                                          label: Text('Venta sin impuesto')),
                                       DataColumn(label: Text('Impuestos')),
                                       DataColumn(label: Text('Tickets')),
+                                      DataColumn(
+                                          label: Text('Promedio Tickets')),
                                       DataColumn(label: Text('Piezas')),
                                     ],
                                     rows: unionParametros
@@ -372,7 +375,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                           DataCell(
                                             Text(
                                               formatNumber(
-                                                  param['venta'] ?? ''),
+                                                  param['venta_neta'] ?? ''),
                                             ),
                                           ),
                                           DataCell(
@@ -385,7 +388,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                           ),
                                           DataCell(
                                             Text(formatNumber(
-                                                param['venta_neta'] ?? '')),
+                                                param['venta'] ?? '')),
                                           ),
                                           DataCell(
                                             Text(formatNumber(
@@ -394,6 +397,9 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                           DataCell(
                                             Text(formatNumber(
                                                 param['tickets'] ?? '')),
+                                          ),
+                                          DataCell(
+                                            Text('sin info'),
                                           ),
                                           DataCell(
                                             Text(formatNumber(
@@ -411,7 +417,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                         DataCell(
                                           Text(
                                             formatNumber(
-                                                calcularTotal('venta')),
+                                                calcularTotal('venta_neta')),
                                             style: const TextStyle(
                                                 fontWeight: FontWeight.bold),
                                           ),
@@ -435,7 +441,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                         DataCell(
                                           Text(
                                             formatNumber(
-                                                calcularTotal('venta_neta')),
+                                                calcularTotal('venta')),
                                             style: const TextStyle(
                                                 fontWeight: FontWeight.bold),
                                           ),
@@ -456,6 +462,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                                 fontWeight: FontWeight.bold),
                                           ),
                                         ),
+                                        DataCell(Text('sin info')),
                                         DataCell(
                                           Text(
                                             formatNumber(

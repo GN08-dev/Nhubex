@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.dart';
 import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,9 @@ class VentasSucursalDetalle extends StatefulWidget {
 class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
   String empresa = '';
   String nombre = '';
+  String rolUsuario = '';
+  String empresaSiglas = '';
+
   bool loading = false;
   List<Map<String, dynamic>> datosC1 = [];
   int itemsPorPagina = 5;
@@ -66,9 +70,23 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
   }
 
   Future<void> obtenerNombreEmpresa() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String nombreEmpresa = await MenuHelper.obtenerNombreEmpresa();
     setState(() {
-      empresa = prefs.getString('Nombre_Empresa') ?? '';
+      empresa = nombreEmpresa;
+    });
+  }
+
+  Future<void> obtenerRolUsuario() async {
+    String rol = await MenuHelper.obtenerRolUsuario();
+    setState(() {
+      rolUsuario = rol;
+    });
+  }
+
+  Future<void> obtenerSiglasEmpresa() async {
+    String siglas = await MenuHelper.obtenersiglasEmpresa();
+    setState(() {
+      empresaSiglas = siglas;
     });
   }
 
@@ -78,7 +96,7 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
     });
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_Sucursal_Detalle&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%2211%22,%22uactivo%22:%22$nombre%22,%22fini%22:%222024-04-18%22,%22ffin%22:%222024-04-19%22%7D%7D&format=JSON&isFront=true';
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_Sucursal_Detalle&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%222024-04-18%22,%22ffin%22:%222024-04-18%22%7D%7D&format=JSON&isFront=true';
 
     try {
       final response = await Dio().get(url);
@@ -95,7 +113,8 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
           });
           datos.add(itemLowerCase);
         }
-// Calcular los totales
+
+        // Calcular los totales
         double totalVenta = 0;
         double totalDevoluciones = 0;
         double totalVentasMenosDev = 0;
@@ -118,7 +137,7 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
           totalPiezas += double.tryParse(registro['piezas'] ?? '0.0') ?? 0.0;
         }
 
-// Actualizar el estado de los totales
+        // Actualizar el estado de los totales
         setState(() {
           totalVentaTotal = totalVenta;
           totalDevolucionesTotal = totalDevoluciones;
@@ -127,6 +146,8 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
           totalImpuestosTotal = totalImpuestos;
           totalTicketsTotal = totalTickets;
           totalPiezasTotal = totalPiezas;
+          // Calcular el promedio de venta neta por ticket
+          totalPromedioTicket = totalVentaNetaTotal / totalTicketsTotal;
         });
 
         return datos;
@@ -258,6 +279,7 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
   double totalVentasMenosDevTotal = 0;
   double totalImpuestosTotal = 0;
   double totalTicketsTotal = 0;
+  double totalPromedioTicket = 0;
   double totalPiezasTotal = 0;
 
   double calcularSumaVentaNetaTotal() {
@@ -339,148 +361,191 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Ventas por Sucursal',
+              'Ventas por ',
               style: TextStyle(fontSize: 18),
             ),
             Text(
-              'Detalle',
+              'Sucursal',
               style: TextStyle(fontSize: 16),
             )
           ],
         ),
       ),
-      body: loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Column(
-              children: [
-                Text(
-                  currentMonth.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black54,
-                  ),
-                ),
-                Text(
-                  ' \$${NumberFormat(
-                    "#,##0.00",
-                  ).format(calcularSumaVentaNetaTotal())}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Gráfica de ventas por forma de pago
-                SizedBox(
-                  height: 300,
-                  child: SalesBarChart(
-                    convertirDatosAVentasBarChart(datosC1),
-                    datosC1
-                        .map((dato) => dato['ubicacion'].toString())
-                        .toList(),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: CustomDataTable(
-                            columns: const [
-                              DataColumn(label: Text('Ubicación')),
-                              DataColumn(label: Text('Sucursal')),
-                              DataColumn(label: Text('Fecha')),
-                              DataColumn(label: Text('Venta')),
-                              DataColumn(label: Text('Devoluciones')),
-                              DataColumn(label: Text('Ventas Menos Dev')),
-                              DataColumn(label: Text('Venta Neta')),
-                              DataColumn(label: Text('Impuestos')),
-                              DataColumn(label: Text('Tickets')),
-                              DataColumn(label: Text('Piezas')),
-                            ],
-                            rows: getDatosPagina(paginaActual)
-                                .map((datos) => DataRow(
-                                      cells: [
-                                        DataCell(
-                                            Text(datos['ubicacion'] ?? '')),
-                                        DataCell(Text(datos['nombre'] ?? '')),
-                                        DataCell(Text(datos['fecha'] ?? '')),
-                                        DataCell(Text(datos['venta'] ?? '')),
-                                        DataCell(
-                                            Text(datos['devoluciones'] ?? '')),
-                                        DataCell(Text(
-                                            datos['ventasmenosdev'] ?? '')),
-                                        DataCell(
-                                            Text(datos['venta_neta'] ?? '')),
-                                        DataCell(
-                                            Text(datos['impuestos'] ?? '')),
-                                        DataCell(Text(datos['tickets'] ?? '')),
-                                        DataCell(Text(datos['piezas'] ?? '')),
-                                      ],
-                                    ))
-                                .toList(),
-                            footerRows: [
-                              DataRow(cells: [
-                                const DataCell(Text('')),
-                                const DataCell(Text('')),
-                                const DataCell(Text('Total',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold))),
-                                DataCell(Text(
-                                    totalVentaTotal.toStringAsFixed(2),
-                                    style: const TextStyle(
-                                        fontWeight:
-                                            FontWeight.bold))), // Total Venta
-                                DataCell(Text(
-                                    '${totalDevolucionesTotal.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight
-                                            .bold))), // Total Devoluciones
-                                DataCell(Text(
-                                    '${totalVentasMenosDevTotal.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight
-                                            .bold))), // Total Ventas Menos Dev
-                                DataCell(Text(
-                                    '${totalVentaNetaTotal.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight
-                                            .bold))), // Total Venta Neta
-                                DataCell(Text(
-                                    '${totalImpuestosTotal.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight
-                                            .bold))), // Total Impuestos
-                                DataCell(Text(
-                                    '${totalTicketsTotal.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                        fontWeight:
-                                            FontWeight.bold))), // Total Tickets
-                                DataCell(Text(
-                                    '${totalPiezasTotal.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                        fontWeight:
-                                            FontWeight.bold))), // Total Piezas
-                              ]),
-                            ],
-                          ),
-                        ),
-                      ],
+      body: SingleChildScrollView(
+        child: loading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : Column(
+                children: [
+                  Text(
+                    currentMonth.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
                     ),
                   ),
-                ),
-              ],
-            ),
+                  Text(
+                    ' \$${NumberFormat(
+                      "#,##0.00",
+                    ).format(calcularSumaVentaNetaTotal())}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Gráfica de ventas por forma de pago
+                  SizedBox(
+                    height: 300,
+                    child: SalesBarChart(
+                      convertirDatosAVentasBarChart(
+                          filtrarDatosPorSucursalTabla(
+                              datosC1, selectedSucursal)),
+                      filtrarDatosPorSucursalTabla(datosC1, selectedSucursal)
+                          .map((dato) => dato['ubicacion'].toString())
+                          .toList(),
+                    ),
+                  ),
+
+                  Container(
+                    height: 300,
+                    padding: const EdgeInsets.all(16.0),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: CustomDataTable(
+                              columns: const [
+                                DataColumn(label: Text('Ubicación')),
+                                DataColumn(label: Text('Sucursal')),
+                                DataColumn(label: Text('Fecha')),
+                                DataColumn(label: Text('Venta Neta')),
+                                DataColumn(label: Text('Devoluciones')),
+                                DataColumn(label: Text('Ventas Menos Dev')),
+                                DataColumn(label: Text('Venta Sin Impuesto')),
+                                DataColumn(label: Text('Impuestos')),
+                                DataColumn(label: Text('Tickets')),
+                                DataColumn(
+                                  label: Text(
+                                    'Promedio Tickets',
+                                  ), // Nueva columna para la venta neta por ticket
+                                ),
+                                DataColumn(label: Text('Piezas')),
+                              ],
+                              rows: filtrarDatosPorSucursalTabla(
+                                      datosC1, selectedSucursal)
+                                  .map((datos) {
+                                final double ventaNeta = double.tryParse(
+                                        datos['venta_neta'] ?? '0.0') ??
+                                    0.0;
+                                final int tickets =
+                                    int.tryParse(datos['tickets'] ?? '0') ?? 0;
+                                final double ventaNetaPorTicket =
+                                    tickets != 0 ? ventaNeta / tickets : 0.0;
+
+                                return DataRow(
+                                  cells: [
+                                    DataCell(Text(datos['ubicacion'] ?? '')),
+                                    DataCell(Text(datos['nombre'] ?? '')),
+                                    DataCell(Text(datos['fecha'] ?? '')),
+                                    DataCell(Text(NumberFormat('#,###.00')
+                                        .format(ventaNeta))),
+                                    DataCell(Text(NumberFormat('#,###.00')
+                                        .format(double.tryParse(
+                                                datos['devoluciones'] ??
+                                                    '0.0') ??
+                                            0.0))),
+                                    DataCell(Text(NumberFormat('#,###.00')
+                                        .format(double.tryParse(
+                                                datos['ventasmenosdev'] ??
+                                                    '0.0') ??
+                                            0.0))),
+                                    DataCell(Text(NumberFormat('#,###.00')
+                                        .format(double.tryParse(
+                                                datos['venta'] ?? '0.0') ??
+                                            0.0))),
+                                    DataCell(Text(NumberFormat('#,###.00')
+                                        .format(double.tryParse(
+                                                datos['impuestos'] ?? '0.0') ??
+                                            0.0))),
+                                    DataCell(Text(NumberFormat('#,###.00')
+                                        .format(tickets))),
+                                    DataCell(Text(
+                                        ventaNetaPorTicket.toStringAsFixed(2))),
+                                    DataCell(Text(NumberFormat('#,###.00')
+                                        .format(double.tryParse(
+                                                datos['piezas'] ?? '0.0') ??
+                                            0.0))),
+                                  ],
+                                );
+                              }).toList(),
+                              footerRows: [
+                                DataRow(cells: [
+                                  const DataCell(Text('')),
+                                  const DataCell(Text('')),
+                                  const DataCell(
+                                    Text('Total',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                  ),
+                                  DataCell(Text(
+                                      NumberFormat('#,###.00')
+                                          .format(totalVentaNetaTotal),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                                  DataCell(Text(
+                                      NumberFormat('#,###.00')
+                                          .format(totalDevolucionesTotal),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                                  DataCell(Text(
+                                      NumberFormat('#,###.00')
+                                          .format(totalVentasMenosDevTotal),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                                  DataCell(Text(
+                                      NumberFormat('#,###.00')
+                                          .format(totalVentaTotal),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                                  DataCell(Text(
+                                      NumberFormat('#,###.00')
+                                          .format(totalImpuestosTotal),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                                  DataCell(Text(
+                                      NumberFormat('#,###.00')
+                                          .format(totalTicketsTotal),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                                  DataCell(Text(
+                                      NumberFormat('#,###.00')
+                                          .format(totalPromedioTicket),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                                  DataCell(Text(
+                                      NumberFormat('#,###.00')
+                                          .format(totalPiezasTotal),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                                ]),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }

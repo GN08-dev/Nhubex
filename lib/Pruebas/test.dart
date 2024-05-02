@@ -1,278 +1,240 @@
 import 'dart:convert';
-import 'dart:math';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
 import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
 import 'package:intl/intl.dart';
-import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
 
-class TestPrueba2 extends StatefulWidget {
-  const TestPrueba2({super.key});
+class Ventaporticketdetalle extends StatefulWidget {
+  const Ventaporticketdetalle({Key? key});
 
   @override
-  State<TestPrueba2> createState() => _TestPrueba2State();
+  State<Ventaporticketdetalle> createState() => _VentaporticketdetalleState();
 }
 
-class _TestPrueba2State extends State<TestPrueba2> {
-  String nombreUsuario = '';
-  String nombreEmpresa = '';
-
-  // Variables de estado
+class _VentaporticketdetalleState extends State<Ventaporticketdetalle> {
+  String empresa = '';
+  String nombre = '';
   bool loading = false;
-  double totalNeto = 0.0;
-  double totalVentaSinImpuesto = 0.0;
-  String selectedTimePeriod = 'Dia';
-  String selectedSucursal = 'Sucursal';
-  List<String> sucursalesOptions = ['Sucursal'];
-  List<String> timePeriodOptions = [
-    'Dia',
-    'Dia pasado',
-    'Mes',
-    'Mes pasado',
-    'Semana',
-    'Semana pasada'
-  ];
-  List<dynamic> datosTemporales = [];
-  List<String> sortedSucursales = [];
-
-  // Nuevo mapa de relaciones entre sucursales e IDUbicacion
-  Map<String, String> sucursalIDUbicacionMap = {};
+  List<Map<String, dynamic>> datosC1 = [];
+  int itemsPorPagina = 5;
+  int paginaActual = 1;
+  double sumaVentaNetaTotal = 0.0;
+  Map<String, double> ventaNetaPorSucursal = {};
+  String selectedSucursal = 'Todas las sucursales';
+  List<String> sucursalesOptions = ['Todas las sucursales'];
+  List<Map<String, dynamic>> filtrarDatosPorSucursalTabla(
+      List<Map<String, dynamic>> datos, String sucursal) {
+    if (sucursal == 'Todas las sucursales') {
+      return datos;
+    } else {
+      return datos.where((dato) => dato['nombre'] == sucursal).toList();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    obtenerDatos();
-    obtenerNombreUsuario();
     obtenerNombreEmpresa();
-  }
-
-  // Función para obtener el nombre del usuario
-  Future<void> obtenerNombreUsuario() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      nombreUsuario = prefs.getString('Nombre') ?? '';
+    obtenerNombreUsuario().then((_) {
+      if (nombre.isNotEmpty) {
+        obtenerDatos().then((data) {
+          setState(() {
+            datosC1 = data;
+            calcularEstadisticas();
+            calcularVentaNetaPorSucursal();
+            actualizarListaSucursales();
+          });
+        });
+      } else {
+        mostrarError('Nombre de usuario no cargado.');
+      }
     });
   }
 
-  // Función para obtener el nombre de la empresa
+  Future<String> obtenerNombreUsuario() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      nombre = prefs.getString('Nombre') ?? '';
+    });
+    print('Nombre cargado de SharedPreferences: $nombre');
+    return nombre;
+  }
+
   Future<void> obtenerNombreEmpresa() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      nombreEmpresa = prefs.getString('nombre_empresa') ?? '';
+      empresa = prefs.getString('Nombre_Empresa') ?? '';
     });
   }
 
-  // Método para obtener datos de la API
-  Future<void> obtenerDatos() async {
+  Future<List<Map<String, dynamic>>> obtenerDatos() async {
     setState(() {
       loading = true;
     });
 
+    final url =
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_ticket_detalle&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%222024-04-19%22,%22ffin%22:%222024-04-19%22%7D%7D&format=JSON&isFront=true';
+
     try {
-      final response = await Dio().get(
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/pe?stored_name=REP_VENTAS_POWERBI&attributes=%7B%22DATOS%22:%7B%7D%7D&format=JSON&isFront=true',
-      );
-
+      final response = await Dio().get(url);
       if (response.statusCode == 200) {
-        datosTemporales = json.decode(response.data)['RESPUESTA']['registro'];
-        obtenerSucursales();
-        calcularTotalventas();
-        // Crear el mapa de relaciones entre sucursales e IDUbicacion
-        for (var registro in datosTemporales) {
-          final sucursal = registro['Sucursal'].toString();
-          final idUbicacion = registro['IDUbicacion'].toString();
+        final Map<String, dynamic> data = json.decode(response.data);
+        final List<dynamic> c1Data = data['RESPUESTA']['C1'];
 
-          // Agrega la relación entre sucursal e IDUbicacion al mapa
-          sucursalIDUbicacionMap[sucursal] = idUbicacion;
+        List<Map<String, dynamic>> datos = [];
+        for (var item in c1Data) {
+          datos.add(Map<String, dynamic>.from(item));
         }
+        return datos;
       } else {
-        throw Exception('Fallo al cargar datos: ${response.statusCode}');
+        mostrarError(
+            'Error al obtener los datos del JSON. Código de estado: ${response.statusCode}');
+        return [];
       }
     } catch (e) {
       print('Error: $e');
-      mostrarError('Error al cargar los datos');
+      mostrarError('Error al cargar los datos.');
+      return [];
     } finally {
-      setState(() {
-        loading = false;
-      });
+      setState(() => loading = false);
     }
   }
 
-  // Método para mostrar errores
   void mostrarError(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(mensaje)),
     );
   }
 
-  // Método para calcular las ventas totales
-  void calcularTotalventas() {
-    final datosFiltrados = filtrarDatosPorPeriodo(selectedTimePeriod);
-    double neto = 0.0;
-    double ventaSinImpuesto = 0.0;
+  List<Map<String, dynamic>> getDatosPagina(int pagina) {
+    final datosFiltrados =
+        filtrarDatosPorSucursalTabla(datosC1, selectedSucursal);
+    final startIndex = (pagina - 1) * itemsPorPagina;
+    final endIndex = startIndex + itemsPorPagina;
+    final datosPagina = datosFiltrados.sublist(startIndex,
+        endIndex < datosFiltrados.length ? endIndex : datosFiltrados.length);
+    return datosPagina;
+  }
 
-    for (var registro in datosFiltrados) {
-      final String claveNeta = obtenerClaveNetaPorPeriodo(selectedTimePeriod);
-      final String claveVentaSinImpuesto =
-          obtenerClaveVentaSinImpuestoPorPeriodo(selectedTimePeriod);
-
-      neto += double.tryParse(registro[claveNeta]) ?? 0.0;
-      ventaSinImpuesto +=
-          double.tryParse(registro[claveVentaSinImpuesto]) ?? 0.0;
-    }
-
-    setState(() {
-      totalNeto = neto;
-      totalVentaSinImpuesto = ventaSinImpuesto;
+  void calcularEstadisticas() {
+    sumaVentaNetaTotal = datosC1.fold<double>(0, (previousValue, element) {
+      return previousValue +
+          (double.tryParse(element['Venta_Neta'] ?? '0.0') ?? 0.0);
     });
   }
 
-  // Método para filtrar datos por periodo de tiempo
-  List<dynamic> filtrarDatosPorPeriodo(String periodo) {
-    return datosTemporales;
-  }
-
-  // Método para obtener las sucursales únicas
-  void obtenerSucursales() {
-    final sucursalesSet = <String>{};
-
-    // Recorre los datos temporales y agrega cada sucursal al conjunto
-    for (var registro in datosTemporales) {
-      final sucursal = registro['Sucursal'].toString();
-      sucursalesSet.add(sucursal);
-    }
-
-    // Convierte el conjunto en una lista y establece las opciones de sucursal
-    setState(() {
-      sucursalesOptions = sucursalesSet.toList();
-      sucursalesOptions.insert(0, 'Sucursal');
-    });
-  }
-
-  String obtenerClaveVentaSinImpuestoPorPeriodo(String periodo) {
-    if (periodo == 'Dia') {
-      return 'VentaDia';
-    } else if (periodo == 'Dia pasado') {
-      return 'VentaDiaAnt';
-    } else if (periodo == 'Mes') {
-      return 'ValorMes';
-    } else if (periodo == 'Mes pasado') {
-      return 'MesPasvalor';
-    } else if (periodo == 'Semana') {
-      return 'Semanavalor';
-    } else if (periodo == 'Semana pasada') {
-      return 'SemanaPasValor';
-    } else {
-      throw Exception('Periodo desconocido');
+  void calcularVentaNetaPorSucursal() {
+    for (var item in datosC1) {
+      final nombreSucursal = item['nombre'] as String;
+      final ventaNeta = double.tryParse(item['Venta_Neta'] ?? '0.0') ?? 0.0;
+      ventaNetaPorSucursal[nombreSucursal] =
+          (ventaNetaPorSucursal[nombreSucursal] ?? 0) + ventaNeta;
     }
   }
 
-  String obtenerClaveNetaPorPeriodo(String periodo) {
-    if (periodo == 'Dia') {
-      return 'NetoDia';
-    } else if (periodo == 'Dia pasado') {
-      return 'NetoDiaAnt';
-    } else if (periodo == 'Mes') {
-      return 'NetoMes';
-    } else if (periodo == 'Mes pasado') {
-      return 'MesPasNeto';
-    } else if (periodo == 'Semana') {
-      return 'SemanaNeto';
-    } else if (periodo == 'Semana pasada') {
-      return 'SemanaPasNeto';
-    } else {
-      throw Exception('Periodo desconocido');
-    }
-  }
-
-  // Método para filtrar los datos por sucursal seleccionada
-  List<dynamic> filtrarDatosPorSucursal(String sucursal) {
-    List<dynamic> datosFiltrados = datosTemporales.where((registro) {
-      if (sucursal == 'Sucursal') {
-        return true;
-      } else {
-        return sucursal == registro['Sucursal'].toString();
-      }
-    }).toList();
-
-    // Ordenar datos por IDUbicacion de menor a mayor
-    datosFiltrados.sort((a, b) {
-      final idA = int.tryParse(a['IDUbicacion'].toString()) ?? 0;
-      final idB = int.tryParse(b['IDUbicacion'].toString()) ?? 0;
-      return idA.compareTo(idB);
-    });
-
-    return datosFiltrados;
-  }
-
-// Método para convertir los datos a un formato de gráficos de barras
   List<BarChartGroupData> convertirDatosAVentasBarChart(List<dynamic> datos) {
     Map<String, double> ventasPorIDUbicacion = {};
-    double maxSales = 0; // Inicializa maxSales a 0
 
     for (var registro in datos) {
-      String idUbicacion = registro['IDUbicacion'].toString();
-
-      // Excluir "Todas las sucursales" de la gráfica
-      if (idUbicacion == 'Sucursal') {
-        continue;
-      }
-
-      // Obtener la clave neta por periodo
-      final key = obtenerClaveNetaPorPeriodo(selectedTimePeriod);
-      double valor = double.tryParse(registro[key]) ?? 0.0;
-      // Actualiza ventasPorIDUbicacion
+      String idUbicacion = registro['ubicacion'].toString();
+      double valor = double.tryParse(registro['Venta_Neta'] ?? '0.0') ?? 0.0;
       ventasPorIDUbicacion[idUbicacion] =
           (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
-      // Actualiza maxSales con el valor máximo de ventas
-      maxSales = max(maxSales, ventasPorIDUbicacion[idUbicacion]!);
     }
 
-    maxSales += maxSales * 0.5;
-
-    // Ordenar los IDs de ubicación por ventas
-    sortedSucursales = ventasPorIDUbicacion.keys.toList()
+    // Ordenamos las ubicaciones por ventas de mayor a menor
+    List<String> sortedSucursales = ventasPorIDUbicacion.keys.toList()
       ..sort((a, b) =>
           ventasPorIDUbicacion[b]!.compareTo(ventasPorIDUbicacion[a]!));
+
+    // Tomamos las primeras 5 ubicaciones con mayores ventas
     sortedSucursales = sortedSucursales.take(5).toList();
 
-    List<BarChartGroupData> listaBarChartData =
-        List.generate(sortedSucursales.length, (index) {
-      final idUbicacion = sortedSucursales[index];
-      final ventas = ventasPorIDUbicacion[idUbicacion]!;
+    List<BarChartGroupData> listaBarChartData = List.generate(
+      sortedSucursales.length,
+      (index) {
+        final idUbicacion = sortedSucursales[index];
+        final ventas = ventasPorIDUbicacion[idUbicacion]!;
 
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: ventas,
-            color: Colors.blue,
-            width: 35,
-            borderRadius: BorderRadius.circular(4),
-            backDrawRodData: BackgroundBarChartRodData(
-              show: true,
-              toY: maxSales,
-              color: Colors.grey[300],
+        // Si es la última ubicación, usamos el valor de ventas como máximo para el eje y
+        double? maxY = index == sortedSucursales.length - 1 ? ventas : null;
+
+        return BarChartGroupData(
+          x: index,
+          barRods: [
+            BarChartRodData(
+              toY: ventas, // Usamos el valor de ventas directamente
+              color: Colors.blue,
+              width: 35,
+              borderRadius: BorderRadius.circular(4),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: ventas, // Usamos el valor máximo solo para la última barra
+                color: Colors.grey[300],
+              ),
             ),
-          ),
-        ],
-      );
-    });
+          ],
+        );
+      },
+    );
 
-    return listaBarChartData; // Retorna la lista de datos de barras
+    return listaBarChartData;
+  }
+
+  List<String> obtenerUbicacionesUnicas(List<Map<String, dynamic>> datos) {
+    Set<String> ubicaciones = Set();
+    for (var dato in datos) {
+      if (dato['ubicacion'] != null) {
+        ubicaciones.add(dato['ubicacion'].toString());
+      }
+    }
+    return ubicaciones.toList();
+  }
+
+  void actualizarListaSucursales() {
+    Set<String> sucursales = Set();
+    for (var dato in datosC1) {
+      if (dato['nombre'] != null) {
+        sucursales.add(dato['nombre'].toString());
+      }
+    }
+    setState(() {
+      sucursalesOptions.clear();
+      sucursalesOptions.add('Todas las sucursales');
+      sucursalesOptions.addAll(sucursales);
+      selectedSucursal = 'Todas las sucursales';
+    });
+  }
+
+  List<Map<String, dynamic>> filtrarDatosPorSucursal(
+      List<Map<String, dynamic>> datos, String sucursal) {
+    if (sucursal == 'Todas las sucursales') {
+      return datos;
+    } else {
+      return datos.where((dato) => dato['nombre'] == sucursal).toList();
+    }
+  }
+
+  double calcularSumaVentaNetaTotal() {
+    final datosFiltrados =
+        filtrarDatosPorSucursalTabla(datosC1, selectedSucursal);
+    return datosFiltrados.fold<double>(0, (previousValue, element) {
+      return previousValue +
+          (double.tryParse(element['Venta_Neta'] ?? '0.0') ?? 0.0);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Obtiene el nombre del mes actual en español
     String currentMonth = DateFormat('MMMM', 'es_MX').format(DateTime.now());
-    final datosFiltrados = filtrarDatosPorSucursal(selectedSucursal);
-    final listaBarChartData = convertirDatosAVentasBarChart(datosFiltrados);
 
+    final datosFiltrados =
+        filtrarDatosPorSucursalTabla(datosC1, selectedSucursal);
+    final paginasTotales = (datosFiltrados.length / itemsPorPagina).ceil();
     return Scaffold(
       endDrawer: Drawer(
         child: Column(
@@ -286,8 +248,8 @@ class _TestPrueba2State extends State<TestPrueba2> {
                 children: [
                   const SizedBox(height: 25),
                   InfoCard(
-                    name: nombreUsuario,
-                    profession: nombreEmpresa,
+                    name: nombre,
+                    profession: empresa,
                   ),
                 ],
               ),
@@ -302,7 +264,7 @@ class _TestPrueba2State extends State<TestPrueba2> {
                     // ExpansionTile para seleccionar la sucursal
                     ExpansionTile(
                       title: const Text(
-                        'Select Sucursal',
+                        'Seleccionar Sucursal',
                         style: TextStyle(color: Colors.white),
                       ),
                       children: sucursalesOptions.map((sucursal) {
@@ -311,7 +273,7 @@ class _TestPrueba2State extends State<TestPrueba2> {
                             Navigator.pop(context);
                             setState(() {
                               selectedSucursal = sucursal;
-                              calcularTotalventas();
+                              // calcularTotalventas(); // Reemplazar con el método correcto si es necesario
                               // Cerrar el ExpansionTile
                             });
                           },
@@ -327,38 +289,6 @@ class _TestPrueba2State extends State<TestPrueba2> {
                         );
                       }).toList(),
                     ),
-
-                    // ExpansionTile para seleccionar el periodo de tiempo
-                    ExpansionTile(
-                      title: const Text(
-                        'Selecciona el periodo',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      children: timePeriodOptions.map((period) {
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                            setState(() {
-                              selectedTimePeriod = period;
-                              calcularTotalventas();
-                              // Cerrar el ExpansionTile
-                            });
-                          },
-                          child: Container(
-                            color: Colors
-                                .black26, // Cambia el color de fondo a rojo
-                            child: ListTile(
-                              title: Text(
-                                period,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              // Elimina los subrayados blancos de ListTile
-                              visualDensity: VisualDensity.compact,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
                   ],
                 ),
               ),
@@ -367,19 +297,25 @@ class _TestPrueba2State extends State<TestPrueba2> {
         ),
       ),
       appBar: AppBar(
-        title: const Text('Ventas'),
+        title: const Column(
+          children: [
+            Text(
+              'Ventas por ',
+              style: TextStyle(fontSize: 18),
+            ),
+            Text(
+              'Ticket',
+              style: TextStyle(fontSize: 16),
+            )
+          ],
+        ),
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : totalNeto == 0.0
+      body: SingleChildScrollView(
+          child: loading
               ? const Center(
-                  child: Text(
-                    'No hay datos disponibles para el período seleccionado.',
-                    style: TextStyle(fontSize: 18),
-                  ),
+                  child: CircularProgressIndicator(),
                 )
               : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
                       currentMonth.toUpperCase(),
@@ -393,7 +329,7 @@ class _TestPrueba2State extends State<TestPrueba2> {
                     Text(
                       ' \$${NumberFormat(
                         "#,##0.00",
-                      ).format(totalNeto)}',
+                      ).format(calcularSumaVentaNetaTotal())}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 25,
@@ -401,113 +337,104 @@ class _TestPrueba2State extends State<TestPrueba2> {
                         color: Colors.black,
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-                    // Llamar a SalesBarChart con xTitles
-                    Expanded(
+                    const SizedBox(height: 50),
+                    AspectRatio(
+                      aspectRatio: 1.5, // Altura deseada
                       child: SalesBarChart(
-                        listaBarChartData,
-                        sortedSucursales,
+                        convertirDatosAVentasBarChart(
+                            filtrarDatosPorSucursal(datosC1, selectedSucursal)),
+                        obtenerUbicacionesUnicas(
+                            filtrarDatosPorSucursal(datosC1, selectedSucursal)),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    // Crear la tabla usando CustomDataTable
-                    Expanded(
+                    Container(
+                      height: 320,
+                      padding: const EdgeInsets.all(16.0),
                       child: SingleChildScrollView(
                         scrollDirection: Axis.vertical,
                         child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: CustomDataTable(
-                              columns: const [
-                                DataColumn(label: Text('Cod')),
-                                DataColumn(label: Text('Sucursal')),
-                                DataColumn(label: Text('Neto')),
-                                DataColumn(label: Text('Venta sin impuesto')),
-                                DataColumn(label: Text('Total Bruto')),
-                              ],
-                              rows: [
-                                ...datosFiltrados.map((registro) {
-                                  final String claveNeta =
-                                      obtenerClaveNetaPorPeriodo(
-                                          selectedTimePeriod);
-                                  final double valorNeto = double.tryParse(
-                                          registro[claveNeta] ?? '0') ??
-                                      0.0;
-                                  final String valorNetoFormateado =
-                                      NumberFormat("#,##0.00")
-                                          .format(valorNeto);
-
-                                  final String claveVentaSinImpuesto =
-                                      obtenerClaveVentaSinImpuestoPorPeriodo(
-                                          selectedTimePeriod);
-                                  final double valorVentaSinImpuesto =
-                                      double.tryParse(
-                                              registro[claveVentaSinImpuesto] ??
-                                                  '0') ??
-                                          0.0;
-                                  final String valorVentaSinImpuestoFormateado =
-                                      NumberFormat("#,##0.00")
-                                          .format(valorVentaSinImpuesto);
-
-                                  // Agrega las celdas a la fila
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(Text(registro['IDUbicacion'])),
-                                      DataCell(Text(registro['Sucursal'])),
-                                      DataCell(
-                                          Text('\$${valorNetoFormateado}')),
-                                      DataCell(Text(
-                                          '\$${valorVentaSinImpuestoFormateado}')),
-                                      const DataCell(Text('sin info')),
-                                    ],
-                                  );
-                                }).toList(),
-                              ],
-                              // Pasa la fila de totales como `footerRows`
-                              footerRows: [
-                                DataRow(
-                                  cells: [
-                                    const DataCell(Text('')),
-                                    const DataCell(Text(
-                                      'Total',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    )),
-                                    DataCell(
-                                      Text(
-                                        '\$${NumberFormat("#,##0.00").format(totalNeto)}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        '\$${NumberFormat("#,##0.00").format(totalVentaSinImpuesto)}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ),
-                                    const DataCell(Text(
-                                      'sin info',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    )),
-                                  ],
-                                ),
-                              ],
-                            )),
+                          scrollDirection: Axis.horizontal,
+                          child: CustomDataTable(
+                            columns: const [
+                              DataColumn(label: Text('Ubicación')),
+                              DataColumn(label: Text('Sucursal')),
+                              DataColumn(label: Text('Ticket')),
+                              DataColumn(label: Text('Código de Barras')),
+                              DataColumn(label: Text('Piezas')),
+                              DataColumn(label: Text('Precio Unitario')),
+                              DataColumn(label: Text('Precio Total')),
+                              DataColumn(label: Text('Impuestos')),
+                              DataColumn(label: Text('Subtotal')),
+                              DataColumn(label: Text('Venta')),
+                              DataColumn(label: Text('Venta Neta')),
+                              DataColumn(label: Text('Factura')),
+                              DataColumn(label: Text('Costo')),
+                              DataColumn(label: Text('Vendedor')),
+                            ],
+                            rows: getDatosPagina(paginaActual)
+                                .map((datos) => DataRow(
+                                      cells: [
+                                        DataCell(
+                                            Text(datos['ubicacion'] ?? '')),
+                                        DataCell(Text(datos['nombre'] ?? '')),
+                                        DataCell(Text(datos['Ticket'] ?? '')),
+                                        DataCell(
+                                            Text(datos['CODIGOBARRAS'] ?? '')),
+                                        DataCell(Text(datos['Piezas'] ?? '')),
+                                        DataCell(
+                                            Text(datos['PRECIO_UNIT'] ?? '')),
+                                        DataCell(
+                                            Text(datos['PRECIO_TOTAL'] ?? '')),
+                                        DataCell(
+                                            Text(datos['Impuestos'] ?? '')),
+                                        DataCell(Text(datos['SUBTOTAL'] ?? '')),
+                                        DataCell(Text(datos['Venta'] ?? '')),
+                                        DataCell(
+                                            Text(datos['Venta_Neta'] ?? '')),
+                                        DataCell(Text(datos['Factura'] ?? '')),
+                                        DataCell(Text(datos['costo'] ?? '')),
+                                        DataCell(Text(datos['Vendedor'] ?? '')),
+                                      ],
+                                    ))
+                                .toList(),
+                            footerRows: [],
+                          ),
+                        ),
                       ),
-                    )
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (paginaActual > 1)
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                paginaActual--;
+                              });
+                            },
+                            icon: const Icon(Icons.arrow_back),
+                          ),
+                        Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Página $paginaActual de $paginasTotales',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        if (paginaActual < paginasTotales)
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                paginaActual++;
+                              });
+                            },
+                            icon: const Icon(Icons.arrow_forward),
+                          ),
+                      ],
+                    ),
                   ],
-                ),
+                )),
     );
   }
 }

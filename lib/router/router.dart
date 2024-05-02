@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
 import 'package:flutter_proyect/models/Reportes/Reportes.dart';
-import 'package:flutter_proyect/models/Registro/Resgistro.dart';
+import 'package:flutter_proyect/models/Registro/Registro.dart';
 import 'package:flutter_proyect/models/prenomina/prenomina.dart';
 import 'package:flutter_proyect/src/Menu_Principa.dart';
 import 'package:flutter_proyect/src/login.dart';

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/appbar/appbar.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
 import 'package:flutter_proyect/components/contenedores/Incio_Administrador.dart';
+// ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
-// Importa el archivo de inicio de sesión
 
 class Menu_Principal extends StatefulWidget {
   const Menu_Principal({Key? key}) : super(key: key);
@@ -23,6 +23,7 @@ class _Menu_PrincipalState extends State<Menu_Principal> {
 
   // Función para obtener el rol del usuario desde SharedPreferences
   void obtenerRolUsuario() async {
+    // ignore: unused_local_variable
     SharedPreferences prefs = await SharedPreferences.getInstance();
   }
 
@@ -43,7 +44,7 @@ class _Menu_PrincipalState extends State<Menu_Principal> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.white),
                 ),
-                child: WelcomeInfo(),
+                child: const WelcomeInfo(),
               ),
             )
           ],

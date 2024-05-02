@@ -60,13 +60,13 @@ class _RegistroState extends State<Registro> {
     String empresa = empresaController.text;
     String usuario = usuarioController.text;
     String password = passwordController.text;
-    String nombre = nombreController.text;
+    String Nombre = nombreController.text;
     String? rol = selectedRole;
 
     if (empresa.isEmpty && rol == 'usuario' ||
         usuario.isEmpty ||
         password.isEmpty ||
-        nombre.isEmpty ||
+        Nombre.isEmpty ||
         rol == null) {
       mostrarAlerta('Error', 'Favor de llenar el formulario');
     } else {
@@ -85,7 +85,7 @@ class _RegistroState extends State<Registro> {
 
           // Crear un mapa de datos para el usuario
           final userData = {
-            'nombre': nombre,
+            'Nombre': Nombre,
             'correo': usuario,
             'rol': rol,
           };
@@ -198,7 +198,7 @@ class _RegistroState extends State<Registro> {
                             child: Text('Usuario'),
                           ),
                           DropdownMenuItem(
-                            value: 'admin',
+                            value: 'Admin',
                             child: Text('Admin'),
                           ),
                         ],

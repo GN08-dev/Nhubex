@@ -8,7 +8,7 @@ import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.d
 import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
 import 'package:flutter_proyect/models/Ventas/Graficas/GraficaDePastelDeForma_pagoDetalle.dart';
 import 'package:intl/intl.dart';
-// ignore: depend_on_referenced_packages
+// ignore: unused_import
 import 'package:shared_preferences/shared_preferences.dart';
 
 class VentaFormaPagoDetalle extends StatefulWidget {
@@ -31,8 +31,8 @@ class _VentaFormaPagoDetalleState extends State<VentaFormaPagoDetalle> {
   String rolUsuario = '';
   String empresaSiglas = '';
   String prueba = 've';
-  String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
+  String fecha =
+      '2024-04-25'; //DateFormat('yyyy-MM-dd').format(DateTime.now());
   @override
   void initState() {
     super.initState();

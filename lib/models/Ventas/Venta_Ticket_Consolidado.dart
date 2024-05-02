@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
+import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.dart';
 import 'package:flutter_proyect/components/menu_desplegable/info_card.dart';
 import 'package:intl/intl.dart';
+// ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_proyect/design/kit_de_estilos/graficas/graphbar.dart'; // Importamos la clase SalesBarChart
+import 'package:flutter_proyect/design/kit_de_estilos/graficas/graphbar.dart';
 
 class VentaTicketConsolidado extends StatefulWidget {
   const VentaTicketConsolidado({Key? key}) : super(key: key);
@@ -18,7 +20,10 @@ class VentaTicketConsolidado extends StatefulWidget {
 class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
   String empresa = '';
   String nombre = '';
+  String rolUsuario = '';
+  String empresaSiglas = '';
   bool loading = false;
+
   double sumaVentaNetaTotal = 0.0;
   List<Map<String, dynamic>> datosC1 = [];
   Map<String, String> sucursalesMap = {};
@@ -47,7 +52,6 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
         obtenerDatos().then((data) {
           setState(() {
             datosC1 = data;
-            calcularEstadisticas();
           });
         });
       } else {
@@ -65,11 +69,24 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
     return nombre;
   }
 
-  // Función para obtener el nombre de la empresa
   Future<void> obtenerNombreEmpresa() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String nombreEmpresa = await MenuHelper.obtenerNombreEmpresa();
     setState(() {
-      empresa = prefs.getString('nombreEmpresa') ?? '';
+      empresa = nombreEmpresa;
+    });
+  }
+
+  Future<void> obtenerRolUsuario() async {
+    String rol = await MenuHelper.obtenerRolUsuario();
+    setState(() {
+      rolUsuario = rol;
+    });
+  }
+
+  Future<void> obtenerSiglasEmpresa() async {
+    String siglas = await MenuHelper.obtenersiglasEmpresa();
+    setState(() {
+      empresaSiglas = siglas;
     });
   }
 
@@ -79,7 +96,7 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
     });
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_ticket_consolidado&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%2211%22,%22uactivo%22:%22$nombre%22,%22fini%22:%222024-04-18%22,%22ffin%22:%222024-04-19%22%7D%7D&format=JSON&isFront=true';
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_ticket_consolidado&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%222024-04-18%22,%22ffin%22:%222024-04-19%22%7D%7D&format=JSON&isFront=true';
 
     try {
       final response = await Dio().get(url);
@@ -102,28 +119,15 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
           String ubicacion = dato['ubicacion'] ?? '';
           sucursalesMap[nombreSucursal] = ubicacion;
         }
-
-        // Calcular los totales
-        double totalVenta = 0;
-        double totalVentaNeta = 0;
-        double totalImpuestos = 0;
-        double totalTickets = 0;
-
-        for (var registro in datos) {
-          totalVenta += double.tryParse(registro['venta'] ?? '0.0') ?? 0.0;
-          totalVentaNeta +=
-              double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
-
-          totalImpuestos +=
-              double.tryParse(registro['impuestos'] ?? '0.0') ?? 0.0;
-          totalTickets += double.tryParse(registro['ticket'] ?? '0.0') ?? 0.0;
-        }
-
+        // Actualizamos las opciones del DropdownButton
         setState(() {
-          totalTicketsTotal = totalTickets;
-          totalImpuestosTotal = totalImpuestos;
-          totalVentaTotal = totalVenta;
-          totalVentaNetaTotal = totalVentaNeta;
+          sucursalesOptions.addAll(sucursalesMap.keys.toList());
+          // Verificamos si hay algún valor en la lista de opciones
+          if (sucursalesOptions.isNotEmpty) {
+            // Establecemos el primer valor de la lista como seleccionado por defecto
+            selectedSucursal = sucursalesOptions.first;
+          }
+          datosC1 = datos; // Asignar los datos antes de actualizar los totales
         });
 
         return datos;
@@ -206,17 +210,57 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
     return listaBarChartData;
   }
 
-  ///CALCULAR TOTALES
-  double totalTicketsTotal = 0;
-  double totalImpuestosTotal = 0;
-  double totalVentaTotal = 0;
-  double totalVentaNetaTotal = 0;
+  List<Map<String, dynamic>> filtrarDatosPorSucursal(
+      List<Map<String, dynamic>> datos, String sucursal) {
+    if (sucursal == 'Todas las sucursales') {
+      return datos;
+    } else {
+      return datos.where((dato) => dato['nombre'] == sucursal).toList();
+    }
+  }
 
-  void calcularEstadisticas() {
-    sumaVentaNetaTotal = datosC1.fold<double>(0, (previousValue, element) {
-      return previousValue +
-          (double.tryParse(element['venta_neta'] ?? '0.0') ?? 0.0);
+  List<String> obtenerUbicacionesUnicas(List<Map<String, dynamic>> datos) {
+    Set<String> ubicaciones = Set();
+    for (var dato in datos) {
+      if (dato['ubicacion'] != null) {
+        ubicaciones.add(dato['ubicacion'].toString());
+      }
+    }
+    return ubicaciones.toList();
+  }
+
+  void actualizarListaSucursales() {
+    Set<String> sucursales = Set();
+    for (var dato in datosC1) {
+      if (dato['nombre'] != null) {
+        sucursales.add(dato['nombre'].toString());
+      }
+    }
+    setState(() {
+      sucursalesOptions.clear();
+      sucursalesOptions.add('Todas las sucursales');
+      sucursalesOptions.addAll(sucursales);
+      selectedSucursal = 'Todas las sucursales';
     });
+  }
+
+  String calcularTotal(String columna) {
+    double total = 0.0;
+    for (var param in datosC1) {
+      if (param['nombre'] == selectedSucursal ||
+          selectedSucursal == 'Todas las sucursales') {
+        double valor = double.tryParse(param[columna] ?? '0.0') ?? 0.0;
+        total += valor;
+      }
+    }
+    return total.toStringAsFixed(2); // Ajusta la precisión según sea necesario
+  }
+
+  // Función para formatear números con coma después de los miles y dos dígitos después del punto decimal
+  String formatNumber(String value) {
+    double numericValue = double.tryParse(value) ?? 0.0;
+    NumberFormat formatter = NumberFormat('#,##0.00');
+    return formatter.format(numericValue);
   }
 
   @override
@@ -264,8 +308,6 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
                             Navigator.pop(context);
                             setState(() {
                               selectedSucursal = sucursal;
-                              // calcularTotalventas(); // Reemplazar con el método correcto si es necesario
-                              // Cerrar el ExpansionTile
                             });
                           },
                           child: Container(
@@ -295,160 +337,156 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
               'Venta por ticket',
               style: TextStyle(fontSize: 18), // Ajusta el tamaño del subtítulo
             ),
-            Text(
-              '(consolidado)',
-              style: TextStyle(fontSize: 16), // Ajusta el tamaño del subtítulo
-            )
           ],
         ),
       ),
-      body: loading
-          ? Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Text(
-                  currentMonth.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black54,
+      body: SingleChildScrollView(
+        child: loading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  Text(
+                    currentMonth.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                    ),
                   ),
-                ),
-                Text(
-                  ' \$${NumberFormat(
-                    "#,##0.00",
-                  ).format(sumaVentaNetaTotal)}', //me falta el campo del total venta neta
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                  Text(
+                    formatNumber(calcularTotal('venta_neta')),
+                    style: const TextStyle(
+                        fontSize: 25, fontWeight: FontWeight.bold),
                   ),
-                ),
-                const SizedBox(
-                  height: 20,
-                ),
-                Expanded(
-                  flex: 3,
-                  child: SizedBox(
-                    height: 500,
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  Container(
+                    height: 300,
+                    alignment: Alignment.centerLeft,
+                    margin: const EdgeInsets.only(left: 1),
                     child: SalesBarChart(
-                      convertirDatosAVentasBarChart(datosC1),
-                      datosC1
-                          .map((dato) => dato['ubicacion'].toString())
-                          .toList(),
+                      convertirDatosAVentasBarChart(
+                          filtrarDatosPorSucursal(datosC1, selectedSucursal)),
+                      obtenerUbicacionesUnicas(
+                          filtrarDatosPorSucursal(datosC1, selectedSucursal)),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                  flex: 3,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.vertical,
+                  Container(
+                    height: 300,
+                    padding: const EdgeInsets.all(16.0),
                     child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: CustomDataTable(
-                        columns: const [
-                          DataColumn(label: Text('Ubicación')),
-                          DataColumn(label: Text('Sucursal')),
-                          DataColumn(label: Text('Vendedor')),
-                          DataColumn(label: Text('Ticket')),
-                          DataColumn(label: Text('Impuestos')),
-                          DataColumn(label: Text('Venta')),
-                          DataColumn(label: Text('Venta Neta')),
-                        ],
-                        rows: getDatosPagina(paginaActual)
-                            .map(
-                              (dato) => DataRow(
-                                cells: [
-                                  DataCell(Text(dato['ubicacion'].toString())),
-                                  DataCell(Text(dato['nombre'].toString())),
-                                  DataCell(Text(dato['vendedor'].toString())),
-                                  DataCell(Text(dato['ticket'].toString())),
-                                  DataCell(Text(
-                                    '${NumberFormat("#,##0.00").format(double.parse(dato['impuestos'].toString()))}', // Aplica el formato con coma para miles
-                                  )),
-                                  DataCell(Text(
-                                    '${NumberFormat("#,##0.00").format(double.parse(dato['venta'].toString()))}', // Aplica el formato con coma para miles
-                                  )),
-                                  DataCell(Text(
-                                    '${NumberFormat("#,##0.00").format(double.parse(dato['venta_neta'].toString()))}', // Aplica el formato con coma para miles
-                                  )),
-                                ],
+                      scrollDirection: Axis.vertical,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: CustomDataTable(
+                          columns: const [
+                            DataColumn(label: Text('Ubicación')),
+                            DataColumn(label: Text('Sucursal')),
+                            DataColumn(label: Text('Vendedor')),
+                            DataColumn(label: Text('Venta Neta')),
+                            DataColumn(label: Text('Venta')),
+                            DataColumn(label: Text('Impuestos')),
+                            DataColumn(label: Text('Ticket')),
+                          ],
+                          rows: getDatosPagina(paginaActual)
+                              .map(
+                                (dato) => DataRow(
+                                  cells: [
+                                    DataCell(
+                                        Text(dato['ubicacion'].toString())),
+                                    DataCell(Text(dato['nombre'].toString())),
+                                    DataCell(Text(dato['vendedor'].toString())),
+                                    DataCell(Text(
+                                      // ignore: unnecessary_string_interpolations
+                                      '${NumberFormat("#,##0.00").format(double.parse(dato['venta_neta'].toString()))}', // Aplica el formato con coma para miles
+                                    )),
+                                    DataCell(Text(
+                                      // ignore: unnecessary_string_interpolations
+                                      '${NumberFormat("#,##0.00").format(double.parse(dato['venta'].toString()))}', // Aplica el formato con coma para miles
+                                    )),
+                                    DataCell(Text(
+                                      // ignore: unnecessary_string_interpolations
+                                      '${NumberFormat("#,##0.00").format(double.parse(dato['impuestos'].toString()))}', // Aplica el formato con coma para miles
+                                    )),
+                                    DataCell(Text(dato['ticket'].toString())),
+                                  ],
+                                ),
+                              )
+                              .toList(),
+                          footerRows: [
+                            DataRow(cells: [
+                              const DataCell(Text('')),
+                              const DataCell(Text('')),
+                              const DataCell(Text('Totales')),
+                              DataCell(Text(
+                                  formatNumber(calcularTotal('venta_neta')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold))),
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('venta')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
                               ),
-                            )
-                            .toList(),
-                        footerRows: [
-                          DataRow(cells: [
-                            const DataCell(Text('')),
-                            const DataCell(Text('')),
-                            const DataCell(Text('Totales')),
-                            DataCell(Text(
-                              '${NumberFormat("#,##0.00").format(totalTicketsTotal)}', // Aplica el formato con coma para miles
-                              style: TextStyle(
-                                  fontWeight: FontWeight
-                                      .bold), // Estilo en negritas para el footer
-                            )),
-                            DataCell(Text(
-                              '${NumberFormat("#,##0.00").format(totalImpuestosTotal)}', // Aplica el formato con coma para miles
-                              style: TextStyle(
-                                  fontWeight: FontWeight
-                                      .bold), // Estilo en negritas para el footer
-                            )),
-                            DataCell(Text(
-                              '${NumberFormat("#,##0.00").format(totalVentaTotal)}', // Aplica el formato con coma para miles
-                              style: TextStyle(
-                                  fontWeight: FontWeight
-                                      .bold), // Estilo en negritas para el footer
-                            )),
-                            DataCell(Text(
-                              '${NumberFormat("#,##0.00").format(totalVentaNetaTotal)}', // Aplica el formato con coma para miles
-                              style: TextStyle(
-                                  fontWeight: FontWeight
-                                      .bold), // Estilo en negritas para el footer
-                            )),
-                          ])
-                        ],
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('impuestos')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('tickets')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ])
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (paginaActual > 1)
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              paginaActual--;
-                            });
-                          },
-                          icon: const Icon(Icons.arrow_back),
+                  Container(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (paginaActual > 1)
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                paginaActual--;
+                              });
+                            },
+                            icon: const Icon(Icons.arrow_back),
+                          ),
+                        Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Página $paginaActual de $paginasTotales',
+                            textAlign: TextAlign.center,
+                          ),
                         ),
-                      Container(
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Página $paginaActual de $paginasTotales',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      if (paginaActual < paginasTotales)
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              paginaActual++;
-                            });
-                          },
-                          icon: const Icon(Icons.arrow_forward),
-                        ),
-                    ],
+                        if (paginaActual < paginasTotales)
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                paginaActual++;
+                              });
+                            },
+                            icon: const Icon(Icons.arrow_forward),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 }
