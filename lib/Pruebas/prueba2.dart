@@ -6,7 +6,6 @@ import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.d
 import 'package:flutter_proyect/models/Ventas/Graficas/GraficaDePastelDeForma_pagoDetalle.dart';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class Prueba2 extends StatefulWidget {
   const Prueba2({Key? key}) : super(key: key);

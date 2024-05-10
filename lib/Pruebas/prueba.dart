@@ -4,7 +4,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class Prueba extends StatefulWidget {
   const Prueba({Key? key}) : super(key: key);

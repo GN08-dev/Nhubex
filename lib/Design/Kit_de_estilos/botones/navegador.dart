@@ -3,7 +3,7 @@ import 'package:flutter_proyect/models/Registro/Registro.dart';
 import 'package:flutter_proyect/models/Ventas/Venta_Consolidada_Rango_Fechas.dart';
 import 'package:flutter_proyect/models/Ventas/Venta_Forma_Pago_Consolidada.dart';
 import 'package:flutter_proyect/models/Ventas/descartados/Venta_Forma_Pago_Detalle.dart';
-import 'package:flutter_proyect/models/Ventas/Venta_Ticket_Consolidado.dart';
+import 'package:flutter_proyect/models/Ventas/descartados/Venta_Ticket_Consolidado.dart';
 import 'package:flutter_proyect/models/Ventas/descartados/Ventas_Diario.dart';
 import 'package:flutter_proyect/models/Ventas/descartados/VentaporTicketDetalle.dart';
 import 'package:flutter_proyect/models/Ventas/Ventas_Sucursal_Detalle.dart';

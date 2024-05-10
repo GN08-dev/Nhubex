@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/botones/custom_button.dart';
 
 import 'package:flutter_proyect/models/Reportes/Reportes.dart';
-import 'package:flutter_proyect/models/prenomina/prenomina.dart';
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,7 +24,7 @@ class WelcomeInfo extends StatelessWidget {
 
         const SizedBox(height: 10),
         CustomButton(
-          title: 'Ventas',
+          title: 'Reportes',
           imagePath: 'assets/images/diagrama.png',
           onPressed: () {
             Navigator.push(

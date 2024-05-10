@@ -19,10 +19,11 @@ class ButtonDataProvider {
 
   static final List<Map<String, dynamic>> salesButtons = [
     // {'title': 'Ventas del diario', 'info': 'sin info'},
-    {
+    /* {
       'title': 'Venta por Ticket',
       'info': 'sin info'
     }, //rep_venta_ticket_consolidado
+  */
     {
       'title': 'Venta por Forma de Pago',
       'info': 'sin info'

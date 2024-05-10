@@ -17,32 +17,60 @@ class SalesBarChart extends StatelessWidget {
     for (var group in seriesList) {
       yValues.addAll(group.barRods.map((rod) => rod.toY).toList());
     }
-    yValues = yValues.toSet().toList(); // Elimina duplicados
-    for (double value in yValues) {
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: value.toString(),
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 12,
+
+// Verificar si yValues está vacío
+    if (yValues.isNotEmpty) {
+      yValues = yValues.toSet().toList(); // Elimina duplicados
+      for (double value in yValues) {
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: value.toString(),
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 12,
+            ),
           ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      maxYLabelWidth = max(maxYLabelWidth, textPainter.width);
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        maxYLabelWidth = max(maxYLabelWidth, textPainter.width);
+      }
     }
 
-    // Calcular el número de dígitos en el número más grande
+// Calcular el alto máximo de las etiquetas del eje Y
+    double maxYLabelHeight = 0.0;
+    if (yValues.isNotEmpty) {
+      yValues = yValues.toSet().toList(); // Elimina duplicados
+      for (double value in yValues) {
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: value.toString(),
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 12,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        maxYLabelHeight = max(maxYLabelHeight, textPainter.height);
+      }
+    }
+
+// Calcular el número de dígitos en el número más grande
     int maxDigits = 1;
-    int maxNumber = yValues.map((value) => value.toInt()).reduce(max);
-    while (maxNumber >= 10) {
-      maxNumber ~/= 10;
-      maxDigits++;
+    if (yValues.isNotEmpty) {
+      int maxNumber = yValues.map((value) => value.toInt()).reduce(max);
+      while (maxNumber >= 10) {
+        maxNumber ~/= 10;
+        maxDigits++;
+      }
     }
 
-    // Ajustar el tamaño del espacio reservado para las etiquetas del eje Y
-    double reservedSize = maxDigits * 8.0; // Ajustar según sea necesario
+// Ajustar el tamaño del espacio reservado para las etiquetas del eje Y
+    double reservedWidth = maxYLabelWidth + 16.0; // Ajustar según sea necesario
+    double reservedHeight =
+        maxDigits * maxYLabelHeight * 1.5; // Ajustar según sea necesario
 
     return BarChart(
       BarChartData(
@@ -81,37 +109,40 @@ class SalesBarChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize:
-                  reservedSize, // Ajuste dinámico del tamaño reservado
+              reservedSize: reservedWidth,
               getTitlesWidget: (value, meta) {
-                // Función para formatear valores en miles
-                String formatValue(double value) {
-                  // Redondear a múltiplos de 250
-                  double scale = 250;
-                  double roundedValue = (value / scale).round() * scale;
+                int index = yValues.indexOf(value.toDouble());
 
-                  // Mostrar el valor redondeado en miles (`K`) si es mayor o igual a 1000
-                  if (roundedValue >= 1000) {
-                    return '${(roundedValue / 1000).toStringAsFixed(0)}K';
+                if (index == 0 ||
+                    index == (xTitles.length - 1) ~/ 2 ||
+                    index == xTitles.length - 1) {
+                  String formatValue(double value) {
+                    double scale = 250;
+                    double roundedValue = (value / scale).round() * scale;
+                    if (roundedValue >= 1000) {
+                      return '${(roundedValue / 1000).toStringAsFixed(0)}K';
+                    }
+                    return roundedValue.toStringAsFixed(0);
                   }
-                  // Mostrar el valor redondeado como número cerrado
-                  return roundedValue.toStringAsFixed(0);
-                }
 
-                return SizedBox(
-                  height: 20, // Ajustar el alto según sea necesario
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 0),
-                    child: Text(
-                      formatValue(value),
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
+                  return SizedBox(
+                    height: 20, // Ajustar el alto según sea necesario
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.only(bottom: 2), // Espacio fijo de 2
+                      child: Text(
+                        formatValue(value),
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.end,
                       ),
-                      textAlign: TextAlign.end,
                     ),
-                  ),
-                );
+                  );
+                }
+                return const SizedBox
+                    .shrink(); // Ocultar el resto de las etiquetas
               },
             ),
           ),

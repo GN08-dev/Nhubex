@@ -193,6 +193,7 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
         final ventas = ventasPorIDUbicacion[idUbicacion]!;
 
         // Si es la última ubicación, usamos el valor de ventas como máximo para el eje y
+        // ignore: unused_local_variable
         double? maxY = index == sortedSucursales.length - 1 ? ventas : null;
 
         return BarChartGroupData(
@@ -445,8 +446,9 @@ class _VentaTicketConsolidadoState extends State<VentaTicketConsolidado> {
                                       fontWeight: FontWeight.bold),
                                 ),
                               ),
+                              // ignore: prefer_const_constructors
                               DataCell(
-                                Text(''),
+                                const Text(''),
                               ),
                             ])
                           ],

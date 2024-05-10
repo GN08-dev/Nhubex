@@ -10,7 +10,7 @@ import 'package:flutter_proyect/Design/Kit_de_estilos/Graficas/graphbar.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
 
 class VentasSucursalDetalle extends StatefulWidget {
-  const VentasSucursalDetalle({Key? key});
+  const VentasSucursalDetalle({super.key});
 
   @override
   State<VentasSucursalDetalle> createState() => _VentasSucursalDetalleState();
@@ -21,8 +21,11 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
   String nombre = '';
   String rolUsuario = '';
   String empresaSiglas = '';
-  String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
+  int anoSeleccionado = DateTime.now().year;
+  int mesSeleccionado = DateTime.now().month;
+  int diaSeleccionado = DateTime.now().day;
+  String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
   bool loading = false;
   List<Map<String, dynamic>> datosC1 = [];
   int itemsPorPagina = 5;
@@ -100,6 +103,9 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
       loading = true;
     });
 
+    // Limpia los datos antes de cargar nuevos datos
+    datosC1.clear();
+
     final url =
         'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_Sucursal_Detalle&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
 
@@ -110,13 +116,12 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
         final List<dynamic> c1Data = data['RESPUESTA']['C1'];
 
         // Procesa y almacena los datos recibidos en `datosC1`
-        List<Map<String, dynamic>> datos = [];
         for (var item in c1Data) {
           Map<String, dynamic> itemLowerCase = {};
           item.forEach((key, value) {
             itemLowerCase[key.toLowerCase()] = value;
           });
-          datos.add(itemLowerCase);
+          datosC1.add(itemLowerCase);
         }
 
         // Calcular los totales
@@ -128,7 +133,7 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
         double totalTickets = 0;
         double totalPiezas = 0;
 
-        for (var registro in datos) {
+        for (var registro in datosC1) {
           totalVenta += double.tryParse(registro['venta'] ?? '0.0') ?? 0.0;
           totalDevoluciones +=
               double.tryParse(registro['devoluciones'] ?? '0.0') ?? 0.0;
@@ -155,7 +160,7 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
           totalPromedioTicket = totalVentaNetaTotal / totalTicketsTotal;
         });
 
-        return datos;
+        return datosC1;
       } else {
         mostrarError(
             'Error al obtener los datos del JSON. Código de estado: ${response.statusCode}');
@@ -227,6 +232,7 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
         final ventas = ventasPorIDUbicacion[idUbicacion]!;
 
         // Si es la última ubicación, usamos el valor de ventas como máximo para el eje y
+        // ignore: unused_local_variable
         double? maxY = index == sortedSucursales.length - 1 ? ventas : null;
 
         return BarChartGroupData(
@@ -296,6 +302,10 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
     });
   }
 
+  int daysInMonth(int month, int year) {
+    return DateTime(year, month + 1, 0).day;
+  }
+
   @override
   Widget build(BuildContext context) {
     String currentMonth = DateFormat('MMMM', 'es_MX').format(DateTime.now());
@@ -326,6 +336,142 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
                 color: const Color.fromRGBO(46, 48, 53, 1),
                 child: ListView(
                   children: [
+                    ExpansionTile(
+                      title: const Text(
+                        'Seleccionar Fecha',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                      children: [
+                        StatefulBuilder(
+                          builder:
+                              (BuildContext context, StateSetter setState) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment
+                                  .start, // Alinear hacia la izquierda
+                              children: [
+                                //
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          4), // Espacio vertical entre los elementos
+                                  child: ExpansionTile(
+                                    initiallyExpanded:
+                                        false, // Inicialmente contraído
+                                    title: Text(
+                                        'Año: ${anoSeleccionado.toString()}',
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                    children: List.generate(
+                                      10, // Cambia este valor según tu rango de años necesarios
+                                      (index) {
+                                        int ano = DateTime.now().year - index;
+                                        return ListTile(
+                                          title: Text(ano.toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white)),
+                                          onTap: () {
+                                            setState(() {
+                                              anoSeleccionado = ano;
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          4), // Espacio vertical entre los elementos
+                                  child: ExpansionTile(
+                                    initiallyExpanded:
+                                        false, // Inicialmente contraído
+                                    title: Text(
+                                        'Mes: ${(mesSeleccionado).toString()}',
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                    children: List.generate(
+                                      12,
+                                      (index) {
+                                        return ListTile(
+                                          title: Text((index + 1).toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white)),
+                                          onTap: () {
+                                            setState(() {
+                                              mesSeleccionado = index + 1;
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          4), // Espacio vertical entre los elementos
+                                  child: ExpansionTile(
+                                    initiallyExpanded:
+                                        false, // Inicialmente contraído
+                                    title: Text(
+                                        'Día: ${(diaSeleccionado).toString()}',
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                    children: List.generate(
+                                      daysInMonth(
+                                          mesSeleccionado, anoSeleccionado),
+                                      (index) {
+                                        return ListTile(
+                                          title: Text((index + 1).toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white)),
+                                          onTap: () {
+                                            setState(() {
+                                              diaSeleccionado = index + 1;
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          8), // Espacio vertical entre los elementos
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(
+                                        context,
+                                        DateTime(
+                                          anoSeleccionado,
+                                          mesSeleccionado,
+                                          diaSeleccionado,
+                                        ),
+                                      );
+                                      setState(() {
+                                        fecha = DateFormat('yyyy-MM-dd').format(
+                                            DateTime(
+                                                anoSeleccionado,
+                                                mesSeleccionado,
+                                                diaSeleccionado));
+                                      });
+                                      obtenerDatos(); // Llama a obtenerDatos() cuando se selecciona una nueva fecha
+                                    },
+                                    child: const Text(
+                                      'Aceptar',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+
                     // ExpansionTile para seleccionar la sucursal
                     ExpansionTile(
                       title: const Text(

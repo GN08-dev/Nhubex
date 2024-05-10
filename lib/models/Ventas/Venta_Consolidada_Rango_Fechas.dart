@@ -21,7 +21,11 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
   String nombre = '';
   String rolUsuario = '';
   String empresaSiglas = '';
+  int anoSeleccionado = DateTime.now().year;
+  int mesSeleccionado = DateTime.now().month;
+  int diaSeleccionado = DateTime.now().day;
   String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
   Map<String, double> ventaNetaPorSucursal = {};
 
   bool loading = false;
@@ -234,6 +238,10 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
     return formatter.format(numericValue);
   }
 
+  int daysInMonth(int month, int year) {
+    return DateTime(year, month + 1, 0).day;
+  }
+
   @override
   Widget build(BuildContext context) {
     String currentMonth = DateFormat('MMMM', 'es_MX').format(DateTime.now());
@@ -269,7 +277,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                   const SizedBox(height: 25),
                   InfoCard(
                     name: nombre,
-                    profession: empresaSiglas,
+                    profession: empresa,
                   ),
                 ],
               ),
@@ -281,6 +289,142 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                 color: const Color.fromRGBO(46, 48, 53, 1),
                 child: ListView(
                   children: [
+                    ExpansionTile(
+                      title: const Text(
+                        'Seleccionar Fecha',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                      children: [
+                        StatefulBuilder(
+                          builder:
+                              (BuildContext context, StateSetter setState) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment
+                                  .start, // Alinear hacia la izquierda
+                              children: [
+                                //
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          4), // Espacio vertical entre los elementos
+                                  child: ExpansionTile(
+                                    initiallyExpanded:
+                                        false, // Inicialmente contraído
+                                    title: Text(
+                                        'Año: ${anoSeleccionado.toString()}',
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                    children: List.generate(
+                                      10, // Cambia este valor según tu rango de años necesarios
+                                      (index) {
+                                        int ano = DateTime.now().year - index;
+                                        return ListTile(
+                                          title: Text(ano.toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white)),
+                                          onTap: () {
+                                            setState(() {
+                                              anoSeleccionado = ano;
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          4), // Espacio vertical entre los elementos
+                                  child: ExpansionTile(
+                                    initiallyExpanded:
+                                        false, // Inicialmente contraído
+                                    title: Text(
+                                        'Mes: ${(mesSeleccionado).toString()}',
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                    children: List.generate(
+                                      12,
+                                      (index) {
+                                        return ListTile(
+                                          title: Text((index + 1).toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white)),
+                                          onTap: () {
+                                            setState(() {
+                                              mesSeleccionado = index + 1;
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          4), // Espacio vertical entre los elementos
+                                  child: ExpansionTile(
+                                    initiallyExpanded:
+                                        false, // Inicialmente contraído
+                                    title: Text(
+                                        'Día: ${(diaSeleccionado).toString()}',
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                    children: List.generate(
+                                      daysInMonth(
+                                          mesSeleccionado, anoSeleccionado),
+                                      (index) {
+                                        return ListTile(
+                                          title: Text((index + 1).toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white)),
+                                          onTap: () {
+                                            setState(() {
+                                              diaSeleccionado = index + 1;
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          8), // Espacio vertical entre los elementos
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(
+                                        context,
+                                        DateTime(
+                                          anoSeleccionado,
+                                          mesSeleccionado,
+                                          diaSeleccionado,
+                                        ),
+                                      );
+                                      setState(() {
+                                        fecha = DateFormat('yyyy-MM-dd').format(
+                                            DateTime(
+                                                anoSeleccionado,
+                                                mesSeleccionado,
+                                                diaSeleccionado));
+                                      });
+                                      obtenerDatos(); // Llama a obtenerDatos() cuando se selecciona una nueva fecha
+                                    },
+                                    child: const Text(
+                                      'Aceptar',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+
                     // ExpansionTile para seleccionar la sucursal
                     ExpansionTile(
                       title: const Text(
@@ -350,7 +494,6 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                           .toList(),
                     ),
                   ),
-                  const SizedBox(height: 20),
                   SizedBox(
                     child: Container(
                       height: 300,
@@ -359,10 +502,9 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(6.0),
                             child: Column(
                               children: [
-                                const SizedBox(height: 16),
                                 if (unionParametros.isNotEmpty)
                                   CustomDataTable(
                                     columns: const [
@@ -388,6 +530,15 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                             selectedSucursal ==
                                                 'Todas las sucursales')
                                         .map((param) {
+                                      double tickets = double.tryParse(
+                                              param['tickets'] ?? '0.0') ??
+                                          0.0;
+                                      double ventas = double.tryParse(
+                                              param['venta_neta'] ?? '0.0') ??
+                                          0.0;
+                                      double promedioTickets = tickets != 0.0
+                                          ? ventas / tickets
+                                          : 0.0;
                                       return DataRow(
                                         cells: [
                                           DataCell(
@@ -423,7 +574,8 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                                 param['tickets'] ?? '')),
                                           ),
                                           DataCell(
-                                            Text('sin info'),
+                                            Text(formatNumber(
+                                                promedioTickets.toString())),
                                           ),
                                           DataCell(
                                             Text(formatNumber(
@@ -486,7 +638,18 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                                                 fontWeight: FontWeight.bold),
                                           ),
                                         ),
-                                        DataCell(Text('sin info')),
+                                        DataCell(
+                                          Text(
+                                            formatNumber((ventaNetaTotal /
+                                                    (double.tryParse(
+                                                            calcularTotal(
+                                                                'tickets')) ??
+                                                        1))
+                                                .toStringAsFixed(2)),
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
                                         DataCell(
                                           Text(
                                             formatNumber(

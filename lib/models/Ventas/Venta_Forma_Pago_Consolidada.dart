@@ -8,7 +8,7 @@ import 'package:flutter_proyect/models/Ventas/Graficas/GraficaDePastelDeForma_pa
 import 'package:intl/intl.dart';
 
 class VentaFormaPagoConsolidada extends StatefulWidget {
-  const VentaFormaPagoConsolidada({super.key});
+  const VentaFormaPagoConsolidada({Key? key});
 
   @override
   State<VentaFormaPagoConsolidada> createState() =>
@@ -27,7 +27,11 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
   String nombreUsuario = '';
   String rolUsuario = '';
   String empresaSiglas = '';
+  int anoSeleccionado = DateTime.now().year;
+  int mesSeleccionado = DateTime.now().month;
+  int diaSeleccionado = DateTime.now().day;
   String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
   @override
   void initState() {
     super.initState();
@@ -36,23 +40,19 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
     obtenerNombreEmpresa();
     obtenerSiglasEmpresa().then((_) {
       // Llamamos a obtenerDatos() después de obtener las siglas de la empresa
-      obtenerDatos().then((data) {
-        setState(() {
-          datosC1 = data;
-          obtenerTotalVentasPorSucursalYFormaPago();
-        });
-      }).catchError((error) {
-        mostrarError('Error al cargar los datos: $error');
-      });
+      obtenerDatos();
     }).catchError((error) {
       mostrarError('Error al obtener las siglas de la empresa: $error');
     });
   }
 
-  Future<List<Map<String, dynamic>>> obtenerDatos() async {
+  Future<void> obtenerDatos() async {
     setState(() {
       loading = true;
     });
+
+    // Limpia los datos antes de cargar nuevos datos
+    datosC1.clear();
 
     final url =
         'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_consolidada_forma_pago&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombreUsuario%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
@@ -62,15 +62,22 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.data);
         final List<dynamic> c1Data = data['RESPUESTA']['C1'];
-        return List<Map<String, dynamic>>.from(c1Data);
+
+        // Procesa y almacena los datos recibidos en `datosC1`
+        datosC1.addAll(List<Map<String, dynamic>>.from(c1Data));
+
+        setState(() {
+          obtenerTotalVentasPorSucursalYFormaPago();
+        });
       } else {
         throw 'Error al obtener los datos del JSON. Código de estado: ${response.statusCode}';
       }
     } catch (e) {
       print('Error: $e');
-      throw 'Error al cargar los datos.';
+      mostrarError('Error al cargar los datos.');
     } finally {
       setState(() => loading = false);
+      print('URL cargada: $url');
     }
   }
 
@@ -166,6 +173,10 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
     });
   }
 
+  int daysInMonth(int month, int year) {
+    return DateTime(year, month + 1, 0).day;
+  }
+
   @override
   Widget build(BuildContext context) {
     String currentMonth = DateFormat('MMMM', 'es_MX').format(DateTime.now());
@@ -195,6 +206,143 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
                 color: const Color.fromRGBO(46, 48, 53, 1),
                 child: ListView(
                   children: [
+                    ExpansionTile(
+                      title: const Text(
+                        'Seleccionar Fecha',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                      children: [
+                        StatefulBuilder(
+                          builder:
+                              (BuildContext context, StateSetter setState) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment
+                                  .start, // Alinear hacia la izquierda
+                              children: [
+                                //
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          4), // Espacio vertical entre los elementos
+                                  child: ExpansionTile(
+                                    initiallyExpanded:
+                                        false, // Inicialmente contraído
+                                    title: Text(
+                                        'Año: ${anoSeleccionado.toString()}',
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                    children: List.generate(
+                                      10, // Cambia este valor según tu rango de años necesarios
+                                      (index) {
+                                        int ano = DateTime.now().year - index;
+                                        return ListTile(
+                                          title: Text(ano.toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white)),
+                                          onTap: () {
+                                            setState(() {
+                                              anoSeleccionado = ano;
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          4), // Espacio vertical entre los elementos
+                                  child: ExpansionTile(
+                                    initiallyExpanded:
+                                        false, // Inicialmente contraído
+                                    title: Text(
+                                        'Mes: ${(mesSeleccionado).toString()}',
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                    children: List.generate(
+                                      12,
+                                      (index) {
+                                        return ListTile(
+                                          title: Text((index + 1).toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white)),
+                                          onTap: () {
+                                            setState(() {
+                                              mesSeleccionado = index + 1;
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          4), // Espacio vertical entre los elementos
+                                  child: ExpansionTile(
+                                    initiallyExpanded:
+                                        false, // Inicialmente contraído
+                                    title: Text(
+                                        'Día: ${(diaSeleccionado).toString()}',
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                    children: List.generate(
+                                      daysInMonth(
+                                          mesSeleccionado, anoSeleccionado),
+                                      (index) {
+                                        return ListTile(
+                                          title: Text((index + 1).toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white)),
+                                          onTap: () {
+                                            setState(() {
+                                              diaSeleccionado = index + 1;
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ).toList(),
+                                  ),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          8), // Espacio vertical entre los elementos
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(
+                                        context,
+                                        DateTime(
+                                          anoSeleccionado,
+                                          mesSeleccionado,
+                                          diaSeleccionado,
+                                        ),
+                                      );
+                                      setState(() {
+                                        fecha = DateFormat('yyyy-MM-dd').format(
+                                            DateTime(
+                                                anoSeleccionado,
+                                                mesSeleccionado,
+                                                diaSeleccionado));
+                                      });
+                                      obtenerDatos(); // Llama a obtenerDatos() cuando se selecciona una nueva fecha
+                                    },
+                                    child: const Text(
+                                      'Aceptar',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+
+                    //
                     ExpansionTile(
                       title: const Text(
                         'Seleccionar Sucursal',
