@@ -57,7 +57,6 @@ class SalesBarChart extends StatelessWidget {
       }
     }
 
-// Calcular el número de dígitos en el número más grande
     int maxDigits = 1;
     if (yValues.isNotEmpty) {
       int maxNumber = yValues.map((value) => value.toInt()).reduce(max);
@@ -67,10 +66,7 @@ class SalesBarChart extends StatelessWidget {
       }
     }
 
-// Ajustar el tamaño del espacio reservado para las etiquetas del eje Y
-    double reservedWidth = maxYLabelWidth + 16.0; // Ajustar según sea necesario
-    double reservedHeight =
-        maxDigits * maxYLabelHeight * 1.5; // Ajustar según sea necesario
+    double reservedWidth = maxYLabelWidth + 16.0;
 
     return BarChart(
       BarChartData(
@@ -108,28 +104,24 @@ class SalesBarChart extends StatelessWidget {
           ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
-              showTitles: true,
+              showTitles: true, // Mostrar todas las etiquetas
               reservedSize: reservedWidth,
               getTitlesWidget: (value, meta) {
-                int index = yValues.indexOf(value.toDouble());
-
-                if (index == 0 ||
-                    index == (xTitles.length - 1) ~/ 2 ||
-                    index == xTitles.length - 1) {
-                  String formatValue(double value) {
-                    double scale = 250;
-                    double roundedValue = (value / scale).round() * scale;
-                    if (roundedValue >= 1000) {
-                      return '${(roundedValue / 1000).toStringAsFixed(0)}K';
-                    }
-                    return roundedValue.toStringAsFixed(0);
+                String formatValue(double value) {
+                  double scale = 250;
+                  double roundedValue = (value / scale).round() * scale;
+                  if (roundedValue >= 1000) {
+                    return '${(roundedValue / 1000).toStringAsFixed(0)}K';
                   }
+                  return roundedValue.toStringAsFixed(0);
+                }
 
+                // Omitir la primera etiqueta (índice 0)
+                if (yValues.indexOf(value.toDouble()) != 0) {
                   return SizedBox(
-                    height: 20, // Ajustar el alto según sea necesario
+                    height: 20,
                     child: Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: 2), // Espacio fijo de 2
+                      padding: const EdgeInsets.only(bottom: 2),
                       child: Text(
                         formatValue(value),
                         style: const TextStyle(
@@ -141,8 +133,7 @@ class SalesBarChart extends StatelessWidget {
                     ),
                   );
                 }
-                return const SizedBox
-                    .shrink(); // Ocultar el resto de las etiquetas
+                return const SizedBox.shrink(); // Ocultar la primera etiqueta
               },
             ),
           ),

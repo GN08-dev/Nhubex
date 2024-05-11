@@ -341,8 +341,6 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
                         ),
                       ],
                     ),
-
-                    //
                     ExpansionTile(
                       title: const Text(
                         'Seleccionar Sucursal',

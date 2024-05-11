@@ -306,8 +306,28 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
     return DateTime(year, month + 1, 0).day;
   }
 
+  String formatNumber(String value) {
+    double numericValue = double.tryParse(value) ?? 0.0;
+    NumberFormat formatter = NumberFormat('#,##0.00');
+    return formatter.format(numericValue);
+  }
+
+  String calcularTotal(String columna) {
+    double total = 0.0;
+    for (var param in datosC1) {
+      if (param['nombre'] == selectedSucursal ||
+          selectedSucursal == 'Todas las sucursales') {
+        double valor = double.tryParse(param[columna] ?? '0.0') ?? 0.0;
+        total += valor;
+      }
+    }
+    return total.toStringAsFixed(2); // Ajusta la precisión según sea necesario
+  }
+
   @override
   Widget build(BuildContext context) {
+    double ventaNetaTotal = double.tryParse(calcularTotal('venta_neta')) ?? 0.0;
+
     String currentMonth = DateFormat('MMMM', 'es_MX').format(DateTime.now());
 
     return Scaffold(
@@ -457,7 +477,9 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
                                                 mesSeleccionado,
                                                 diaSeleccionado));
                                       });
-                                      obtenerDatos(); // Llama a obtenerDatos() cuando se selecciona una nueva fecha
+                                      obtenerDatos().then((_) {
+                                        actualizarListaSucursales(); // Actualiza las sucursales después de obtener los datos
+                                      });
                                     },
                                     child: const Text(
                                       'Aceptar',
@@ -484,8 +506,6 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
                             Navigator.pop(context);
                             setState(() {
                               selectedSucursal = sucursal;
-                              // calcularTotalventas(); // Reemplazar con el método correcto si es necesario
-                              // Cerrar el ExpansionTile
                             });
                           },
                           child: Container(
@@ -646,46 +666,68 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
                                         style: TextStyle(
                                             fontWeight: FontWeight.bold)),
                                   ),
-                                  DataCell(Text(
-                                      NumberFormat('#,###.00')
-                                          .format(totalVentaNetaTotal),
+                                  DataCell(
+                                    Text(
+                                      formatNumber(calcularTotal('venta_neta')),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat('#,###.00')
-                                          .format(totalDevolucionesTotal),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      formatNumber(
+                                          calcularTotal('devoluciones')),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat('#,###.00')
-                                          .format(totalVentasMenosDevTotal),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      formatNumber(
+                                          calcularTotal('ventasmenosdev')),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat('#,###.00')
-                                          .format(totalVentaTotal),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      formatNumber(calcularTotal('venta')),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat('#,###.00')
-                                          .format(totalImpuestosTotal),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      formatNumber(calcularTotal('impuestos')),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat('#,###.00')
-                                          .format(totalTicketsTotal),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      formatNumber(calcularTotal('tickets')),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat('#,###.00')
-                                          .format(totalPromedioTicket),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      formatNumber((ventaNetaTotal /
+                                              (double.tryParse(calcularTotal(
+                                                      'tickets')) ??
+                                                  1))
+                                          .toStringAsFixed(2)),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                                  DataCell(Text(
-                                      NumberFormat('#,###.00')
-                                          .format(totalPiezasTotal),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      formatNumber(calcularTotal('piezas')),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
                                 ]),
                               ],
                             ),
