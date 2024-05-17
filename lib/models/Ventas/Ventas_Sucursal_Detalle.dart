@@ -146,6 +146,12 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
           totalTickets += double.tryParse(registro['tickets'] ?? '0.0') ?? 0.0;
           totalPiezas += double.tryParse(registro['piezas'] ?? '0.0') ?? 0.0;
         }
+        // Ordenar unionParametros por 'venta_neta' de mayor a menor
+        datosC1.sort((a, b) {
+          double ventaNetaA = double.tryParse(a['venta_neta'] ?? '0') ?? 0;
+          double ventaNetaB = double.tryParse(b['venta_neta'] ?? '0') ?? 0;
+          return ventaNetaB.compareTo(ventaNetaA);
+        });
 
         // Actualizar el estado de los totales
         setState(() {

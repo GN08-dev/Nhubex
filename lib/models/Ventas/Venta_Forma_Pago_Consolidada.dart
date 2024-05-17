@@ -55,7 +55,7 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
     datosC1.clear();
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_consolidada_forma_pago&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombreUsuario%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_consolidada_forma_pago_optimizado&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombreUsuario%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
 
     try {
       final response = await Dio().get(url);
@@ -489,21 +489,39 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
                                 const DataColumn(label: Text('Nombre')),
                                 for (var formaPago in formasDePago)
                                   DataColumn(label: Text(formaPago)),
+                                const DataColumn(
+                                    label:
+                                        Text('Total')), // Nueva columna "Total"
                               ],
                               rows: ventasPorSucursalYFormaPago.entries
-                                  .map((entry) => DataRow(cells: [
-                                        DataCell(Text(entry.key)), // Ubicación
-                                        DataCell(Text(nombres.firstWhere(
-                                            (nombre) => datosC1.any((item) =>
-                                                item['ubicacion'] ==
-                                                    entry.key &&
-                                                item['nombre'] == nombre)))),
-                                        for (var formaPago in formasDePago)
-                                          DataCell(Text(
-                                            '${entry.value[formaPago] != null ? NumberFormat("#,##0.00").format(entry.value[formaPago]!) : "0.00"}',
-                                          )),
-                                      ]))
-                                  .toList(),
+                                  .map((entry) {
+                                // Obtener el nombre correspondiente a la ubicación
+                                String nombre = nombres.firstWhere(
+                                    (nombre) => datosC1.any((item) =>
+                                        item['ubicacion'] == entry.key &&
+                                        item['nombre'] == nombre),
+                                    orElse: () => '');
+
+                                // Calcular el total para todas las formas de pago
+                                double totalPorUbicacion =
+                                    formasDePago.fold(0.0, (sum, formaPago) {
+                                  return sum + (entry.value[formaPago] ?? 0.0);
+                                });
+
+                                return DataRow(cells: [
+                                  DataCell(Text(entry.key)), // Ubicación
+                                  DataCell(Text(nombre)), // Nombre
+                                  for (var formaPago in formasDePago)
+                                    DataCell(Text(
+                                      '${entry.value[formaPago] != null ? NumberFormat("#,##0.00").format(entry.value[formaPago]!) : "0.00"}',
+                                    )),
+                                  DataCell(Text(
+                                    '${NumberFormat("#,##0.00").format(totalPorUbicacion)}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  )), // Columna "Total"
+                                ]);
+                              }).toList(),
                               footerRows: [
                                 DataRow(cells: [
                                   const DataCell(
@@ -519,12 +537,18 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
                                   for (var formaPago in formasDePago)
                                     DataCell(
                                       Text(
-                                        // ignore: unnecessary_string_interpolations
                                         '${totalVentaGeneral()[formaPago] != null ? NumberFormat("#,##0.00").format(totalVentaGeneral()[formaPago]!) : "0.00"}',
                                         style: const TextStyle(
                                             fontWeight: FontWeight.bold),
                                       ),
                                     ),
+                                  DataCell(
+                                    Text(
+                                      '${NumberFormat("#,##0.00").format(calcularVentaTotalNetaGeneral())}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ), // Total general
                                 ]),
                               ],
                             ),

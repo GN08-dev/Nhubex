@@ -27,6 +27,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
   String fecha = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
   Map<String, double> ventaNetaPorSucursal = {};
+  List<String> sortedSucursales = [];
 
   bool loading = false;
   List<Map<String, String>> unionParametros = [];
@@ -37,9 +38,6 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
     'Todas las sucursales'
   ]; // Agregamos la opción "Todas las sucursales" al inicio
 
-  //paginas
-  int itemsPorPagina = 5;
-  int paginaActual = 1;
   @override
   void initState() {
     super.initState();
@@ -111,6 +109,14 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
           });
           unionParametros.add(paramMap);
         }
+
+        // Ordenar unionParametros por 'venta_neta' de mayor a menor
+        unionParametros.sort((a, b) {
+          double ventaNetaA = double.tryParse(a['venta_neta'] ?? '0') ?? 0;
+          double ventaNetaB = double.tryParse(b['venta_neta'] ?? '0') ?? 0;
+          return ventaNetaB.compareTo(ventaNetaA);
+        });
+
         // Obtener nombres de sucursales y sus ubicaciones
         for (var dato in unionParametros) {
           String nombreSucursal = dato['nombre'] ?? '';
@@ -174,13 +180,9 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
             (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
       }
     }
-
-    // Ordenamos las ubicaciones por ventas de mayor a menor
-    List<String> sortedSucursales = ventasPorIDUbicacion.keys.toList()
+    sortedSucursales = ventasPorIDUbicacion.keys.toList()
       ..sort((a, b) =>
           ventasPorIDUbicacion[b]!.compareTo(ventasPorIDUbicacion[a]!));
-
-    // Tomamos las primeras 5 ubicaciones con mayores ventas
     sortedSucursales = sortedSucursales.take(5).toList();
 
     List<BarChartGroupData> listaBarChartData = List.generate(
@@ -209,14 +211,6 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
     );
 
     return listaBarChartData;
-  }
-
-  ///get de datos de pagina
-  List<Map<String, dynamic>> getDatosPagina(int pagina) {
-    final startIndex = (pagina - 1) * itemsPorPagina;
-    final endIndex = startIndex + itemsPorPagina;
-    return unionParametros.sublist(startIndex,
-        endIndex < unionParametros.length ? endIndex : unionParametros.length);
   }
 
   String calcularTotal(String columna) {

@@ -57,6 +57,7 @@ class SalesBarChart extends StatelessWidget {
       }
     }
 
+    // ignore: unused_local_variable
     int maxDigits = 1;
     if (yValues.isNotEmpty) {
       int maxNumber = yValues.map((value) => value.toInt()).reduce(max);
