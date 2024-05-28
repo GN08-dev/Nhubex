@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
 import 'package:intl/intl.dart';
-import 'package:data_table_2/data_table_2.dart';
 
 class Prueba extends StatefulWidget {
   const Prueba({Key? key});
