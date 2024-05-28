@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 
 class CustomDataTable extends StatelessWidget {
@@ -10,7 +11,7 @@ class CustomDataTable extends StatelessWidget {
   final double columnSpacing; // Espaciado entre columnas
 
   const CustomDataTable({
-    super.key,
+    Key? key,
     required this.columns,
     required this.rows,
     required this.footerRows,
@@ -18,9 +19,9 @@ class CustomDataTable extends StatelessWidget {
         color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
     this.rowStyle = const TextStyle(color: Colors.black, fontSize: 16),
     this.footerStyle = const TextStyle(
-        color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
+        color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold),
     this.columnSpacing = 20.0,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -56,14 +57,13 @@ class CustomDataTable extends StatelessWidget {
           }).toList(),
         );
       }).toList(),
-      columnSpacing: columnSpacing,
       showBottomBorder: true,
-      dividerThickness: 0,
+      dividerThickness: 1,
       headingRowColor: MaterialStateProperty.all(
           Colors.grey.shade300), // Color gris para encabezados
       headingTextStyle: headerStyle, // Estilo de encabezados
-      dataRowColor: MaterialStateProperty.all(Colors.transparent), // Sin color
-      dataTextStyle: footerStyle, // Estilo para filas de pie de columna
+      dataRowColor: MaterialStateProperty.all(Colors.transparent),
+      dataTextStyle: footerStyle,
     );
   }
 }

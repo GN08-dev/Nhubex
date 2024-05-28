@@ -4,7 +4,6 @@ class MenuDataProvider {
   static final List<Map<String, dynamic>> sideMenus = [
     {'title': 'Menú', 'icon': Icons.home},
     {'title': 'Reportes', 'icon': Icons.pending_actions_rounded},
-    {'title': 'Prenomina', 'icon': Icons.search},
     {'title': 'Registro', 'icon': Icons.people},
     {'title': 'Cerrar Sesión', 'icon': Icons.logout},
     {'title': 'Regresar', 'icon': Icons.arrow_back},
@@ -19,7 +18,6 @@ class MenuDataProviderUsuario {
   static final List<Map<String, dynamic>> sideMenusUsuario = [
     {'title': 'Menú', 'icon': Icons.home},
     {'title': 'Reportes', 'icon': Icons.pending_actions_rounded},
-    {'title': 'Prenomina', 'icon': Icons.search},
     {'title': 'Cerrar Sesión', 'icon': Icons.logout},
     {'title': 'Regresar', 'icon': Icons.arrow_back},
   ];

@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_proyect/Design/Kit_de_estilos/Table/DataTable.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/info_card.dart';
-import 'package:flutter_proyect/components/Menu_Desplegable/redireccionamiento.dart';
+import 'package:intl/intl.dart';
+import 'package:data_table_2/data_table_2.dart';
 
 class Prueba extends StatefulWidget {
-  const Prueba({Key? key}) : super(key: key);
+  const Prueba({Key? key});
 
   @override
   State<Prueba> createState() => _PruebaState();
@@ -14,54 +14,74 @@ class Prueba extends StatefulWidget {
 
 class _PruebaState extends State<Prueba> {
   bool loading = false;
-  List<Map<String, dynamic>> datosC1 = [];
-  List<String> formasDePago = [];
-  List<String> nombres = [];
-  Map<String, Map<String, double>> ventasPorSucursalYFormaPago = {};
-  String selectedSumType = 'venta_neta';
-  String? selectedName;
-  String empresa = '';
-  String nombreUsuario = '';
-  String rolUsuario = '';
+  List<Map<String, String>> unionParametros = [];
+  Map<String, String> sucursalesMap = {};
+  String selectedSucursal = 'Todas las sucursales';
+  List<String> sucursalesOptions = ['Todas las sucursales'];
+  int currentPage = 0;
+  int rowsPerPage = 5;
 
   @override
   void initState() {
     super.initState();
-    obtenerNombreUsuario();
-    obtenerRolUsuario();
-    obtenerNombreEmpresa();
-    obtenerDatos().then((data) {
-      setState(() {
-        datosC1 = data;
-        obtenerTotalVentasPorSucursalYFormaPago();
-      });
-    }).catchError((error) {
-      mostrarError('Error al cargar los datos: $error');
-    });
+    obtenerDatos();
   }
 
-  Future<List<Map<String, dynamic>>> obtenerDatos() async {
+  Future<void> obtenerDatos() async {
     setState(() {
       loading = true;
     });
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_detalle_forma_pago&attributes=%7B%22DATOS%22:%7B%22uactivo%22:%22shernandez%22,%22fini%22:%222024-04-25%22,%22ffin%22:%222024-04-25%22%7D%7D&format=JSON&isFront=true';
-
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/ve?stored_name=rep_venta_consolidada&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22shernandez%22,%22fini%22:%222024-05-19%22,%22ffin%22:%222024-05-19%22%7D%7D&format=JSON&isFront=true';
     try {
       final response = await Dio().get(url);
+      print('URL: $url');
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.data);
+
         final List<dynamic> c1Data = data['RESPUESTA']['C1'];
-        return List<Map<String, dynamic>>.from(c1Data);
+
+        unionParametros.clear();
+        for (var item in c1Data) {
+          Map<String, String> paramMap = {};
+          item.forEach((key, value) {
+            paramMap[key.toLowerCase()] = value.toString();
+          });
+          unionParametros.add(paramMap);
+        }
+
+        unionParametros.sort((a, b) {
+          double ventaNetaA = double.tryParse(a['venta_neta'] ?? '0') ?? 0;
+          double ventaNetaB = double.tryParse(b['venta_neta'] ?? '0') ?? 0;
+          return ventaNetaB.compareTo(ventaNetaA);
+        });
+
+        for (var dato in unionParametros) {
+          String nombreSucursal = dato['nombre'] ?? '';
+          String ubicacion = dato['ubicacion'] ?? '';
+          sucursalesMap[nombreSucursal] = ubicacion;
+        }
+
+        setState(() {
+          sucursalesOptions.addAll(sucursalesMap.keys.toList());
+          if (sucursalesOptions.isNotEmpty) {
+            selectedSucursal = sucursalesOptions.first;
+          }
+        });
       } else {
-        throw 'Error al obtener los datos del JSON. Código de estado: ${response.statusCode}';
+        mostrarError(
+            'Error al obtener los datos. Código de estado: ${response.statusCode}');
       }
     } catch (e) {
       print('Error: $e');
-      throw 'Error al cargar los datos.';
+      mostrarError('Error al cargar datos');
+      print('URL: $url');
     } finally {
-      setState(() => loading = false);
+      setState(() {
+        loading = false;
+      });
     }
   }
 
@@ -71,247 +91,279 @@ class _PruebaState extends State<Prueba> {
     );
   }
 
-  void obtenerTotalVentasPorSucursalYFormaPago() {
-    // Limpiar datos existentes al cambiar la forma de sumatoria seleccionada
-    ventasPorSucursalYFormaPago.clear();
-    nombres.clear();
-
-    for (var item in datosC1) {
-      String ubicacion = item['ubicacion'] as String;
-      String nombre = item['nombre'] as String;
-      String formaPago = item['desc_fp'] as String;
-      double venta = selectedSumType == 'venta_neta'
-          ? double.parse(item['venta_neta'] as String)
-          : double.parse(item['venta'] as String);
-
-      ventasPorSucursalYFormaPago[ubicacion] ??= {};
-      ventasPorSucursalYFormaPago[ubicacion]![formaPago] ??= 0.0;
-      ventasPorSucursalYFormaPago[ubicacion]![formaPago] =
-          (ventasPorSucursalYFormaPago[ubicacion]![formaPago] ?? 0.0) + venta;
-
-      if (!nombres.contains(nombre)) {
-        nombres.add(nombre);
+  String calcularTotal(String columna) {
+    double total = 0.0;
+    for (var param in unionParametros) {
+      if (param['nombre'] == selectedSucursal ||
+          selectedSucursal == 'Todas las sucursales') {
+        double valor = double.tryParse(param[columna] ?? '0.0') ?? 0.0;
+        total += valor;
       }
     }
+    return total.toStringAsFixed(2);
   }
 
-  Map<String, double> totalVentaGeneral() {
-    Map<String, double> totalVentas = {};
-
-    formasDePago.forEach((formaPago) {
-      double total = 0.0;
-      ventasPorSucursalYFormaPago.values.forEach((sucursalVentas) {
-        if (sucursalVentas.containsKey(formaPago)) {
-          total += sucursalVentas[formaPago]!;
-        }
-      });
-      totalVentas[formaPago] = total;
-    });
-
-    return totalVentas;
-  }
-
-//datos
-  // Función para obtener el nombre de la empresa
-  Future<void> obtenerNombreEmpresa() async {
-    String nombreEmpresa = await MenuHelper.obtenerNombreEmpresa();
-    setState(() {
-      empresa = nombreEmpresa;
-    });
-  }
-
-  // Función para obtener el nombre del usuario
-  Future<void> obtenerNombreUsuario() async {
-    String nombre = await MenuHelper.obtenerNombreUsuario();
-    setState(() {
-      nombreUsuario = nombre;
-    });
-  }
-
-  // Función para obtener el rol del usuario
-  Future<void> obtenerRolUsuario() async {
-    String rol = await MenuHelper.obtenerRolUsuario();
-    setState(() {
-      rolUsuario = rol;
-    });
+  String formatNumber(String value) {
+    double numericValue = double.tryParse(value) ?? 0.0;
+    NumberFormat formatter = NumberFormat('#,##0.00');
+    return formatter.format(numericValue);
   }
 
   @override
   Widget build(BuildContext context) {
-    formasDePago =
-        datosC1.map((item) => item['desc_fp'] as String).toSet().toList();
-
     return Scaffold(
-      endDrawer: Drawer(
-        child: Column(
-          children: [
-            Container(
-              color: const Color.fromRGBO(0, 184, 239, 1),
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.orange,
+      body: Padding(
+        padding: const EdgeInsets.all(2.0),
+        child: loading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : Column(
                 children: [
-                  const SizedBox(height: 25),
-                  InfoCard(
-                    name: nombreUsuario,
-                    profession: empresa,
+                  const SizedBox(height: 30),
+                  Center(
+                    child: SizedBox(
+                      height: 400,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Column(
+                            children: [
+                              CustomDataTable(
+                                columns: const [
+                                  DataColumn(
+                                    label: Text('Ubicacion'),
+                                  ),
+                                  DataColumn(
+                                    label: Text('Nombre'),
+                                  ),
+                                  DataColumn(
+                                    label: Text('Venta Neta'),
+                                  ),
+                                  DataColumn(
+                                    label: Text('Devolucion'),
+                                  ),
+                                  DataColumn(
+                                    label: Text('Ventas Menos devolucion'),
+                                  ),
+                                  DataColumn(
+                                    label: Text('Venta sin impuesto'),
+                                  ),
+                                  DataColumn(
+                                    label: Text('Impuestos'),
+                                  ),
+                                  DataColumn(
+                                    label: Text('Tickets'),
+                                  ),
+                                  DataColumn(
+                                    label: Text('Promedio Tickets'),
+                                  ),
+                                  DataColumn(
+                                    label: Text('Piezas'),
+                                  ),
+                                ],
+                                rows: unionParametros
+                                    .where((param) =>
+                                        param['nombre'] == selectedSucursal ||
+                                        selectedSucursal ==
+                                            'Todas las sucursales')
+                                    .skip(currentPage * rowsPerPage)
+                                    .take(rowsPerPage)
+                                    .map((param) {
+                                  double tickets = double.tryParse(
+                                          param['tickets'] ?? '0.0') ??
+                                      0.0;
+                                  double ventas = double.tryParse(
+                                          param['venta_neta'] ?? '0.0') ??
+                                      0.0;
+                                  double promedioTickets =
+                                      tickets != 0.0 ? ventas / tickets : 0.0;
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(param['ubicacion'] ?? ''),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(param['nombre'] ?? ''),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(
+                                            formatNumber(
+                                                param['venta_neta'] ?? ''),
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(formatNumber(
+                                              param['devoluciones'] ?? '')),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(formatNumber(
+                                              param['ventasmenosdev'] ?? '')),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(formatNumber(
+                                              param['venta'] ?? '')),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(formatNumber(
+                                              param['impuestos'] ?? '')),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(formatNumber(
+                                              param['tickets'] ?? '')),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(formatNumber(
+                                              promedioTickets.toString())),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0, vertical: 12.0),
+                                          child: Text(formatNumber(
+                                              param['piezas'] ?? '')),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                                footerRows: [
+                                  DataRow(cells: [
+                                    const DataCell(Text('')),
+                                    const DataCell(Text('Total',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                    DataCell(
+                                      Text(
+                                        formatNumber(
+                                            calcularTotal('venta_neta')),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        formatNumber(
+                                            calcularTotal('devoluciones')),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        formatNumber(
+                                            calcularTotal('ventasmenosdev')),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        formatNumber(calcularTotal('venta')),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        formatNumber(
+                                            calcularTotal('impuestos')),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        formatNumber(calcularTotal('tickets')),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    const DataCell(Text('')),
+                                    DataCell(
+                                      Text(
+                                        formatNumber(calcularTotal('piezas')),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ]),
+                                ],
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: currentPage > 0
+                                        ? () {
+                                            setState(() {
+                                              currentPage--;
+                                            });
+                                          }
+                                        : null,
+                                    child: const Text('Anterior'),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  ElevatedButton(
+                                    onPressed: (currentPage + 1) * rowsPerPage <
+                                            unionParametros.length
+                                        ? () {
+                                            setState(() {
+                                              currentPage++;
+                                            });
+                                          }
+                                        : null,
+                                    child: const Text('Siguiente'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-            Expanded(
-              child: Container(
-                color: const Color.fromRGBO(46, 48, 53, 1),
-                child: ListView(
-                  children: [
-                    ExpansionTile(
-                      title: const Text(
-                        'Seleccionar Sucursal',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      children: nombres.map((nombre) {
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                            setState(() {
-                              selectedName = nombre;
-                              obtenerTotalVentasPorSucursalYFormaPago();
-                            });
-                          },
-                          child: Container(
-                            color: Colors.black26,
-                            child: ListTile(
-                              title: Text(
-                                nombre,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    ExpansionTile(
-                      title: Text(
-                        'Tipos venta',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      children: [
-                        ListTile(
-                          title: Text(
-                            'Venta Neta',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          onTap: () {
-                            setState(() {
-                              selectedSumType = 'venta_neta';
-                              obtenerTotalVentasPorSucursalYFormaPago();
-                            });
-                            Navigator.pop(context);
-                          },
-                        ),
-                        ListTile(
-                          title: Text(
-                            'Venta',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          onTap: () {
-                            setState(() {
-                              selectedSumType = 'venta';
-                              obtenerTotalVentasPorSucursalYFormaPago();
-                            });
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
-      appBar: AppBar(
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Venta por forma', style: TextStyle(fontSize: 18)),
-            Text('De pago', style: TextStyle(fontSize: 16)),
-          ],
-        ),
-      ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : Container(
-              width: MediaQuery.of(context).size.width,
-              height: 400,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: CustomDataTable(
-                        columns: [
-                          const DataColumn(label: Text('Ubicacion')),
-                          const DataColumn(label: Text('Nombre')),
-                          for (var formaPago in formasDePago)
-                            DataColumn(label: Text(formaPago)),
-                        ],
-                        rows: ventasPorSucursalYFormaPago.entries
-                            .map((entry) => DataRow(cells: [
-                                  DataCell(Text(entry.key)), // Ubicación
-                                  DataCell(Text(nombres.firstWhere((nombre) =>
-                                      datosC1.any((item) =>
-                                          item['ubicacion'] == entry.key &&
-                                          item['nombre'] == nombre)))),
-                                  for (var formaPago in formasDePago)
-                                    DataCell(Text(
-                                      '${entry.value[formaPago] != null ? entry.value[formaPago]?.toStringAsFixed(2) : "0.00"}',
-                                    )),
-                                ]))
-                            .toList(),
-                        footerRows: [
-                          DataRow(cells: [
-                            const DataCell(
-                              Text(''),
-                            ),
-                            const DataCell(
-                              Text(
-                                'Total',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            for (var formaPago in formasDePago)
-                              DataCell(
-                                Text(
-                                  // ignore: unnecessary_string_interpolations
-                                  '${totalVentaGeneral()[formaPago]?.toStringAsFixed(2) ?? "0.00"}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                          ]),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
     );
   }
 }
-
-/*const SizedBox(height: 20),
-                    const Text('Total Venta General',
-                        style: TextStyle(fontSize: 18)),
-                    const SizedBox(height: 10),
-                    ...totalVentaGeneral().entries.map(
-                          (total) => Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(total.key),
-                              Text(total.value.toStringAsFixed(2)),
-                            ],
-                          ),
-                        ),*/

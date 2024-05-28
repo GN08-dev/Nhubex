@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:data_table_2/data_table_2.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
@@ -37,7 +38,8 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
   List<String> sucursalesOptions = [
     'Todas las sucursales'
   ]; // Agregamos la opción "Todas las sucursales" al inicio
-
+  int currentPage = 0;
+  int rowsPerPage = 4;
   @override
   void initState() {
     super.initState();
@@ -283,142 +285,6 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                 color: const Color.fromRGBO(46, 48, 53, 1),
                 child: ListView(
                   children: [
-                    ExpansionTile(
-                      title: const Text(
-                        'Seleccionar Fecha',
-                        style: TextStyle(fontSize: 16, color: Colors.white),
-                      ),
-                      children: [
-                        StatefulBuilder(
-                          builder:
-                              (BuildContext context, StateSetter setState) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment
-                                  .start, // Alinear hacia la izquierda
-                              children: [
-                                //
-                                Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical:
-                                          4), // Espacio vertical entre los elementos
-                                  child: ExpansionTile(
-                                    initiallyExpanded:
-                                        false, // Inicialmente contraído
-                                    title: Text(
-                                        'Año: ${anoSeleccionado.toString()}',
-                                        style: const TextStyle(
-                                            color: Colors.white)),
-                                    children: List.generate(
-                                      10, // Cambia este valor según tu rango de años necesarios
-                                      (index) {
-                                        int ano = DateTime.now().year - index;
-                                        return ListTile(
-                                          title: Text(ano.toString(),
-                                              style: const TextStyle(
-                                                  color: Colors.white)),
-                                          onTap: () {
-                                            setState(() {
-                                              anoSeleccionado = ano;
-                                            });
-                                          },
-                                        );
-                                      },
-                                    ).toList(),
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical:
-                                          4), // Espacio vertical entre los elementos
-                                  child: ExpansionTile(
-                                    initiallyExpanded:
-                                        false, // Inicialmente contraído
-                                    title: Text(
-                                        'Mes: ${(mesSeleccionado).toString()}',
-                                        style: const TextStyle(
-                                            color: Colors.white)),
-                                    children: List.generate(
-                                      12,
-                                      (index) {
-                                        return ListTile(
-                                          title: Text((index + 1).toString(),
-                                              style: const TextStyle(
-                                                  color: Colors.white)),
-                                          onTap: () {
-                                            setState(() {
-                                              mesSeleccionado = index + 1;
-                                            });
-                                          },
-                                        );
-                                      },
-                                    ).toList(),
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical:
-                                          4), // Espacio vertical entre los elementos
-                                  child: ExpansionTile(
-                                    initiallyExpanded:
-                                        false, // Inicialmente contraído
-                                    title: Text(
-                                        'Día: ${(diaSeleccionado).toString()}',
-                                        style: const TextStyle(
-                                            color: Colors.white)),
-                                    children: List.generate(
-                                      daysInMonth(
-                                          mesSeleccionado, anoSeleccionado),
-                                      (index) {
-                                        return ListTile(
-                                          title: Text((index + 1).toString(),
-                                              style: const TextStyle(
-                                                  color: Colors.white)),
-                                          onTap: () {
-                                            setState(() {
-                                              diaSeleccionado = index + 1;
-                                            });
-                                          },
-                                        );
-                                      },
-                                    ).toList(),
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical:
-                                          8), // Espacio vertical entre los elementos
-                                  child: TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(
-                                        context,
-                                        DateTime(
-                                          anoSeleccionado,
-                                          mesSeleccionado,
-                                          diaSeleccionado,
-                                        ),
-                                      );
-                                      setState(() {
-                                        fecha = DateFormat('yyyy-MM-dd').format(
-                                            DateTime(
-                                                anoSeleccionado,
-                                                mesSeleccionado,
-                                                diaSeleccionado));
-                                      });
-                                      obtenerDatos(); // Llama a obtenerDatos() cuando se selecciona una nueva fecha
-                                    },
-                                    child: const Text(
-                                      'Aceptar',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-
                     // ExpansionTile para seleccionar la sucursal
                     ExpansionTile(
                       title: const Text(
@@ -459,14 +325,195 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
               )
             : Column(
                 children: [
-                  Text(
-                    currentMonth.toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
+                  ExpansionTile(
+                    title: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 50,
+                      ), // Ajusta el espacio a la izquierda según lo necesites
+                      child: Text(
+                        currentMonth.toUpperCase(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black54,
+                        ),
+                      ),
                     ),
+                    children: [
+                      StatefulBuilder(
+                        builder: (BuildContext context, StateSetter setState) {
+                          int currentYear = DateTime.now().year;
+                          int currentMonth = DateTime.now().month;
+                          int currentDay = DateTime.now().day;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Text('Año: ',
+                                            style:
+                                                TextStyle(color: Colors.black)),
+                                        DropdownButton<int>(
+                                          value: anoSeleccionado,
+                                          items: List.generate(6, (index) {
+                                            int ano = currentYear - index;
+                                            return DropdownMenuItem<int>(
+                                              value: ano,
+                                              child: Text(ano.toString(),
+                                                  style: const TextStyle(
+                                                      color: Colors.black)),
+                                            );
+                                          }),
+                                          onChanged: (int? newValue) {
+                                            setState(() {
+                                              anoSeleccionado = newValue!;
+                                              // Ajustar el mes y día seleccionado si es necesario
+                                              if (anoSeleccionado ==
+                                                      currentYear &&
+                                                  mesSeleccionado >
+                                                      currentMonth) {
+                                                mesSeleccionado = currentMonth;
+                                              }
+                                              if (anoSeleccionado ==
+                                                      currentYear &&
+                                                  mesSeleccionado ==
+                                                      currentMonth &&
+                                                  diaSeleccionado >
+                                                      currentDay) {
+                                                diaSeleccionado = currentDay;
+                                              }
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ), // Dropdown para el mes
+                                    Row(
+                                      children: [
+                                        const Text('Mes: ',
+                                            style:
+                                                TextStyle(color: Colors.black)),
+                                        DropdownButton<int>(
+                                          value: mesSeleccionado,
+                                          items: List.generate(
+                                            anoSeleccionado == currentYear
+                                                ? currentMonth
+                                                : 12,
+                                            (index) {
+                                              int month;
+                                              if (anoSeleccionado ==
+                                                  currentYear) {
+                                                month = currentMonth - index;
+                                              } else {
+                                                month = 12 - index;
+                                              }
+                                              return DropdownMenuItem<int>(
+                                                value: month,
+                                                child: Text(month.toString(),
+                                                    style: const TextStyle(
+                                                        color: Colors.black)),
+                                              );
+                                            },
+                                          ),
+                                          onChanged: (int? newValue) {
+                                            setState(() {
+                                              mesSeleccionado = newValue!;
+                                              // Ajustar el día seleccionado si es necesario
+                                              if (anoSeleccionado ==
+                                                      currentYear &&
+                                                  mesSeleccionado ==
+                                                      currentMonth &&
+                                                  diaSeleccionado >
+                                                      currentDay) {
+                                                diaSeleccionado = currentDay;
+                                              }
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    // Dropdown para el día
+                                    Row(
+                                      children: [
+                                        const Text('Día: ',
+                                            style:
+                                                TextStyle(color: Colors.black)),
+                                        DropdownButton<int>(
+                                          value: diaSeleccionado,
+                                          items: List.generate(
+                                            anoSeleccionado == currentYear &&
+                                                    mesSeleccionado ==
+                                                        currentMonth
+                                                ? currentDay
+                                                : daysInMonth(mesSeleccionado,
+                                                    anoSeleccionado),
+                                            (index) {
+                                              int day;
+                                              if (anoSeleccionado ==
+                                                      currentYear &&
+                                                  mesSeleccionado ==
+                                                      currentMonth) {
+                                                day = currentDay - index;
+                                              } else {
+                                                day = daysInMonth(
+                                                        mesSeleccionado,
+                                                        anoSeleccionado) -
+                                                    index;
+                                              }
+                                              return DropdownMenuItem<int>(
+                                                value: day,
+                                                child: Text(day.toString(),
+                                                    style: const TextStyle(
+                                                        color: Colors.black)),
+                                              );
+                                            },
+                                          ),
+                                          onChanged: (int? newValue) {
+                                            setState(() {
+                                              diaSeleccionado = newValue!;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Center(
+                                child: Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  child: TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        fecha = DateFormat('yyyy-MM-dd')
+                                            .format(DateTime(
+                                          anoSeleccionado,
+                                          mesSeleccionado,
+                                          diaSeleccionado,
+                                        ));
+                                        obtenerDatos(); // Llama a obtenerDatos() cuando se selecciona una nueva fecha
+                                      });
+                                    },
+                                    child: const Text(
+                                      'Aceptar',
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   Text(
                     '\$${formatNumber(ventaNetaTotal.toString())}', // Muestra la venta neta total
@@ -488,179 +535,198 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                           .toList(),
                     ),
                   ),
-                  SizedBox(
-                    child: Container(
-                      height: 300,
+                  Container(
+                    height: 300,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
                       child: SingleChildScrollView(
                         scrollDirection: Axis.vertical,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Padding(
-                            padding: const EdgeInsets.all(6.0),
-                            child: Column(
-                              children: [
-                                if (unionParametros.isNotEmpty)
-                                  CustomDataTable(
-                                    columns: const [
-                                      DataColumn(label: Text('Ubicacion')),
-                                      DataColumn(label: Text('Nombre')),
-                                      DataColumn(label: Text('Venta Neta')),
-                                      DataColumn(label: Text('Devolucion')),
-                                      DataColumn(
-                                          label:
-                                              Text('Ventas Menos devolucion')),
-                                      DataColumn(
-                                          label: Text('Venta sin impuesto')),
-                                      DataColumn(label: Text('Impuestos')),
-                                      DataColumn(label: Text('Tickets')),
-                                      DataColumn(
-                                          label: Text('Promedio Tickets')),
-                                      DataColumn(label: Text('Piezas')),
-                                    ],
-                                    rows: unionParametros
-                                        .where((param) =>
-                                            param['nombre'] ==
-                                                selectedSucursal ||
-                                            selectedSucursal ==
-                                                'Todas las sucursales')
-                                        .map((param) {
-                                      double tickets = double.tryParse(
-                                              param['tickets'] ?? '0.0') ??
-                                          0.0;
-                                      double ventas = double.tryParse(
-                                              param['venta_neta'] ?? '0.0') ??
-                                          0.0;
-                                      double promedioTickets = tickets != 0.0
-                                          ? ventas / tickets
-                                          : 0.0;
-                                      return DataRow(
-                                        cells: [
-                                          DataCell(
-                                            Text(param['ubicacion'] ?? ''),
-                                          ),
-                                          DataCell(
-                                            Text(param['nombre'] ?? ''),
-                                          ),
-                                          DataCell(
-                                            Text(
-                                              formatNumber(
-                                                  param['venta_neta'] ?? ''),
-                                            ),
-                                          ),
-                                          DataCell(
-                                            Text(formatNumber(
-                                                param['devoluciones'] ?? '')),
-                                          ),
-                                          DataCell(
-                                            Text(formatNumber(
-                                                param['ventasmenosdev'] ?? '')),
-                                          ),
-                                          DataCell(
-                                            Text(formatNumber(
-                                                param['venta'] ?? '')),
-                                          ),
-                                          DataCell(
-                                            Text(formatNumber(
-                                                param['impuestos'] ?? '')),
-                                          ),
-                                          DataCell(
-                                            Text(formatNumber(
-                                                param['tickets'] ?? '')),
-                                          ),
-                                          DataCell(
-                                            Text(formatNumber(
-                                                promedioTickets.toString())),
-                                          ),
-                                          DataCell(
-                                            Text(formatNumber(
-                                                param['piezas'] ?? '')),
-                                          ),
-                                        ],
-                                      );
-                                    }).toList(),
-                                    footerRows: [
-                                      DataRow(cells: [
-                                        const DataCell(Text('')),
-                                        const DataCell(Text('Total',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold))),
-                                        DataCell(
-                                          Text(
-                                            formatNumber(
-                                                calcularTotal('venta_neta')),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(
-                                            formatNumber(
-                                                calcularTotal('devoluciones')),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(
-                                            formatNumber(calcularTotal(
-                                                'ventasmenosdev')),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(
-                                            formatNumber(
-                                                calcularTotal('venta')),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(
-                                            formatNumber(
-                                                calcularTotal('impuestos')),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(
-                                            formatNumber(
-                                                calcularTotal('tickets')),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(
-                                            formatNumber((ventaNetaTotal /
-                                                    (double.tryParse(
-                                                            calcularTotal(
-                                                                'tickets')) ??
-                                                        1))
-                                                .toStringAsFixed(2)),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(
-                                            formatNumber(
-                                                calcularTotal('piezas')),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ]),
-                                    ],
-                                  ),
-                              ],
+                        child: CustomDataTable(
+                          columns: const [
+                            DataColumn(
+                              label: Text('Ubicacion'),
                             ),
-                          ),
+                            DataColumn(
+                              label: Text('Nombre'),
+                            ),
+                            DataColumn(
+                              label: Text('Venta Neta'),
+                            ),
+                            DataColumn(
+                              label: Text('Devolucion'),
+                            ),
+                            DataColumn(
+                              label: Text('Ventas Menos devolucion'),
+                            ),
+                            DataColumn(
+                              label: Text('Venta sin impuesto'),
+                            ),
+                            DataColumn(
+                              label: Text('Impuestos'),
+                            ),
+                            DataColumn(
+                              label: Text('Tickets'),
+                            ),
+                            DataColumn(
+                              label: Text('Promedio Tickets'),
+                            ),
+                            DataColumn(
+                              label: Text('Piezas'),
+                            ),
+                          ],
+                          rows: unionParametros
+                              .where((param) =>
+                                  param['nombre'] == selectedSucursal ||
+                                  selectedSucursal == 'Todas las sucursales')
+                              .skip(currentPage * rowsPerPage)
+                              .take(rowsPerPage)
+                              .map((param) {
+                            double tickets =
+                                double.tryParse(param['tickets'] ?? '0.0') ??
+                                    0.0;
+                            double ventas =
+                                double.tryParse(param['venta_neta'] ?? '0.0') ??
+                                    0.0;
+                            double promedioTickets =
+                                tickets != 0.0 ? ventas / tickets : 0.0;
+                            return DataRow(
+                              cells: [
+                                DataCell(
+                                  Text(param['ubicacion'] ?? ''),
+                                ),
+                                DataCell(
+                                  Text(param['nombre'] ?? ''),
+                                ),
+                                DataCell(
+                                  Text(
+                                    formatNumber(param['venta_neta'] ?? ''),
+                                  ),
+                                ),
+                                DataCell(
+                                  Text(formatNumber(
+                                      param['devoluciones'] ?? '')),
+                                ),
+                                DataCell(
+                                  Text(formatNumber(
+                                      param['ventasmenosdev'] ?? '')),
+                                ),
+                                DataCell(
+                                  Text(formatNumber(param['venta'] ?? '')),
+                                ),
+                                DataCell(
+                                  Text(formatNumber(param['impuestos'] ?? '')),
+                                ),
+                                DataCell(
+                                  Text(formatNumber(param['tickets'] ?? '')),
+                                ),
+                                DataCell(
+                                  Text(
+                                      formatNumber(promedioTickets.toString())),
+                                ),
+                                DataCell(
+                                  Text(formatNumber(param['piezas'] ?? '')),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                          footerRows: [
+                            DataRow(cells: [
+                              const DataCell(Text('')),
+                              const DataCell(Text('Total',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold))),
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('venta_neta')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('devoluciones')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('ventasmenosdev')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('venta')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('impuestos')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('tickets')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  formatNumber((ventaNetaTotal /
+                                          (double.tryParse(
+                                                  calcularTotal('tickets')) ??
+                                              1))
+                                      .toStringAsFixed(2)),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  formatNumber(calcularTotal('piezas')),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ]),
+                          ],
                         ),
                       ),
                     ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: currentPage > 0
+                            ? () {
+                                setState(() {
+                                  currentPage--;
+                                });
+                              }
+                            : null,
+                        child: const Text('Anterior'),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton(
+                        onPressed: (currentPage + 1) * rowsPerPage <
+                                unionParametros.length
+                            ? () {
+                                setState(() {
+                                  currentPage++;
+                                });
+                              }
+                            : null,
+                        child: const Text('Siguiente'),
+                      ),
+                    ],
                   ),
                 ],
               ),

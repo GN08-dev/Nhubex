@@ -144,13 +144,11 @@ class CustomButtonReportes extends StatelessWidget {
 
 class CustomButtondes extends StatelessWidget {
   final String title;
-  final String additionalText;
   final VoidCallback onPressed;
 
   const CustomButtondes({
     super.key,
     required this.title,
-    required this.additionalText,
     required this.onPressed,
   });
 
@@ -191,10 +189,6 @@ class CustomButtondes extends StatelessWidget {
                           color: Colors.black,
                           fontWeight: FontWeight.bold),
                     ),
-                    Text(
-                      additionalText,
-                      style: const TextStyle(fontSize: 14, color: Colors.black),
-                    )
                   ],
                 ),
               ),

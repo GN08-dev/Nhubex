@@ -45,7 +45,7 @@ class _GreaficaDePastelState extends State<GreaficaDePastel> {
     return Column(
       children: [
         AspectRatio(
-          aspectRatio: 1.5,
+          aspectRatio: 2,
           child: Container(
             width: double.infinity,
             child: PieChart(
@@ -71,7 +71,7 @@ class _GreaficaDePastelState extends State<GreaficaDePastel> {
             ),
           ),
         ),
-        const SizedBox(height: 8.0),
+        const SizedBox(height: 30.0),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -106,7 +106,7 @@ class _GreaficaDePastelState extends State<GreaficaDePastel> {
               : 0, // Mostrar la etiqueta solo cuando se toca
           fontWeight: FontWeight.bold,
         ),
-        radius: 120.0, // Ajustar el radio de las secciones
+        radius: 120.0,
         titlePositionPercentageOffset: 0.6,
       );
     }).toList();
@@ -136,7 +136,7 @@ class _Legend extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 10,
+            width: 9,
             height: 10,
             decoration: BoxDecoration(
               shape: BoxShape.circle,

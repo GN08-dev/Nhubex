@@ -22,7 +22,6 @@ class _ReportesctState extends State<Reportesct> {
       children: buttons.map((buttonData) {
         return CustomButtondes(
           title: buttonData['title'],
-          additionalText: buttonData['info'],
           onPressed: () {
             Reportes.handleButtonTap(context, buttonData);
           },

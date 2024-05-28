@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_proyect/components/Menu_Desplegable/Menu_Lateral.dart';
 import 'package:flutter_proyect/models/Reportes/Reportes.dart';
 import 'package:flutter_proyect/models/Registro/Registro.dart';
-import 'package:flutter_proyect/models/prenomina/prenomina.dart';
 import 'package:flutter_proyect/src/Menu_Principa.dart';
 import 'package:flutter_proyect/src/login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,10 +27,6 @@ class AppRouter {
     } else if (settings.name == '/Registro') {
       return MaterialPageRoute(
         builder: (_) => Registro(),
-      );
-    } else if (settings.name == '/Prenomina') {
-      return MaterialPageRoute(
-        builder: (_) => Prenomina(),
       );
     } else {
       return null;
