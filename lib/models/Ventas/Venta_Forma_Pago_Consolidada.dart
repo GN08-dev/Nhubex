@@ -54,6 +54,9 @@ class _VentaFormaPagoConsolidadaState extends State<VentaFormaPagoConsolidada> {
 
     // Limpia los datos antes de cargar nuevos datos
     datosC1.clear();
+    formasDePago.clear();
+    ventasPorSucursalYFormaPago.clear();
+    nombres.clear();
 
     final url =
         'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_consolidada_forma_pago_optimizado&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombreUsuario%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';

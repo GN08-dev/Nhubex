@@ -103,8 +103,12 @@ class _VentasSucursalDetalleState extends State<VentasSucursalDetalle> {
   Future<List<Map<String, dynamic>>> obtenerDatos() async {
     setState(() {
       loading = true;
+      // Limpia la información anterior antes de realizar una nueva solicitud
+      datosC1.clear();
+      sucursalesMap.clear();
+      sucursalesOptions = ['Todas las sucursales'];
+      selectedSucursal = 'Todas las sucursales';
     });
-
     // Limpia los datos antes de cargar nuevos datos
     datosC1.clear();
 

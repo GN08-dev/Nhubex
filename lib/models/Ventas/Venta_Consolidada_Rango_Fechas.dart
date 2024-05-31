@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:data_table_2/data_table_2.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
@@ -33,11 +32,17 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
   bool loading = false;
   List<Map<String, String>> unionParametros = [];
   Map<String, String> sucursalesMap = {};
-  String selectedSucursal =
-      'Todas las sucursales'; // Inicializamos con "Todas las sucursales"
-  List<String> sucursalesOptions = [
-    'Todas las sucursales'
-  ]; // Agregamos la opción "Todas las sucursales" al inicio
+  String selectedSucursal = 'Todas las sucursales';
+  List<String> sucursalesOptions = ['Todas las sucursales'];
+  List<Map<String, dynamic>> filtrarDatosPorSucursalTabla(
+      List<Map<String, dynamic>> datos, String sucursal) {
+    if (sucursal == 'Todas las sucursales') {
+      return datos;
+    } else {
+      return datos.where((dato) => dato['nombre'] == sucursal).toList();
+    }
+  }
+
   int currentPage = 0;
   int rowsPerPage = 4;
   @override
@@ -88,10 +93,15 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
   Future<void> obtenerDatos() async {
     setState(() {
       loading = true;
+      // Limpia la información anterior antes de realizar una nueva solicitud
+      unionParametros.clear();
+      sucursalesMap.clear();
+      sucursalesOptions = ['Todas las sucursales'];
+      selectedSucursal = 'Todas las sucursales';
     });
 
     final url =
-        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_consolidada&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
+        'https://www.nhubex.com/ServGenerales/General/ejecutarStoredGenericoWithFormat/$empresaSiglas?stored_name=rep_venta_consolidada_optimizado&attributes=%7B%22DATOS%22:%7B%22ubicacion%22:%22%22,%22uactivo%22:%22$nombre%22,%22fini%22:%22$fecha%22,%22ffin%22:%22$fecha%22%7D%7D&format=JSON&isFront=true';
     try {
       final response = await Dio().get(url);
       print('URL: $url');
@@ -157,34 +167,22 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
     );
   }
 
-  List<BarChartGroupData> convertirDatosAVentasBarChart(
-      List<dynamic> datos, String sucursalSeleccionada) {
+  List<BarChartGroupData> convertirDatosAVentasBarChart(List<dynamic> datos) {
     Map<String, double> ventasPorIDUbicacion = {};
 
-    // Filtra los datos por la sucursal seleccionada, si no es "Todas las sucursales"
-    if (sucursalSeleccionada != 'Todas las sucursales') {
-      final datosFiltrados = datos
-          .where((dato) => dato['nombre'] == sucursalSeleccionada)
-          .toList();
-
-      for (var registro in datosFiltrados) {
-        String idUbicacion = registro['ubicacion'].toString();
-        double valor = double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
-        ventasPorIDUbicacion[idUbicacion] =
-            (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
-      }
-    } else {
-      // Si se selecciona "Todas las sucursales", mostramos todas las ubicaciones
-      for (var registro in datos) {
-        String idUbicacion = registro['ubicacion'].toString();
-        double valor = double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
-        ventasPorIDUbicacion[idUbicacion] =
-            (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
-      }
+    for (var registro in datos) {
+      String idUbicacion = registro['ubicacion'].toString();
+      double valor = double.tryParse(registro['venta_neta'] ?? '0.0') ?? 0.0;
+      ventasPorIDUbicacion[idUbicacion] =
+          (ventasPorIDUbicacion[idUbicacion] ?? 0) + valor;
     }
-    sortedSucursales = ventasPorIDUbicacion.keys.toList()
+
+    // Ordenamos las ubicaciones por ventas de mayor a menor
+    List<String> sortedSucursales = ventasPorIDUbicacion.keys.toList()
       ..sort((a, b) =>
           ventasPorIDUbicacion[b]!.compareTo(ventasPorIDUbicacion[a]!));
+
+    // Tomamos las primeras 5 ubicaciones con mayores ventas
     sortedSucursales = sortedSucursales.take(5).toList();
 
     List<BarChartGroupData> listaBarChartData = List.generate(
@@ -192,6 +190,9 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
       (index) {
         final idUbicacion = sortedSucursales[index];
         final ventas = ventasPorIDUbicacion[idUbicacion]!;
+
+        // ignore: unused_local_variable
+        double? maxY = index == sortedSucursales.length - 1 ? ventas : null;
 
         return BarChartGroupData(
           x: index,
@@ -525,12 +526,14 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  AspectRatio(
-                    aspectRatio: 1.5,
+                  SizedBox(
+                    height: 280,
                     child: SalesBarChart(
-                      convertirDatosAVentasBarChart(unionParametros,
-                          selectedSucursal), // Pasamos la sucursal seleccionada a la función
-                      unionParametros
+                      convertirDatosAVentasBarChart(
+                          filtrarDatosPorSucursalTabla(
+                              unionParametros, selectedSucursal)),
+                      filtrarDatosPorSucursalTabla(
+                              unionParametros, selectedSucursal)
                           .map((dato) => dato['ubicacion'].toString())
                           .toList(),
                     ),
@@ -550,7 +553,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                               label: Text('Nombre'),
                             ),
                             DataColumn(
-                              label: Text('Venta Neta'),
+                              label: Text('Venta'),
                             ),
                             DataColumn(
                               label: Text('Devolucion'),
@@ -559,7 +562,7 @@ class _VentaConsilidadaState extends State<VentaConsilidada> {
                               label: Text('Ventas Menos devolucion'),
                             ),
                             DataColumn(
-                              label: Text('Venta sin impuesto'),
+                              label: Text('Venta Neta'),
                             ),
                             DataColumn(
                               label: Text('Impuestos'),
